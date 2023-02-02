@@ -4,18 +4,19 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'atalanta'",
+            "name": "Debug bin 'transactor'",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=atalanta",
+                    "--bin=transactor",
                     "--package=atalanta"
                 ],
                 "filter": {
-                    "name": "atalanta",
+                    "name": "transactor",
                     "kind": "bin"
                 }
             },
@@ -23,6 +24,23 @@
             "cwd": "${workspaceFolder}"
         },
         {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug bin 'distributor'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=distributor",
+                    "--package=atalanta"
+                ],
+                "filter": {
+                    "name": "distributor",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },        {
             "type": "lldb",
             "request": "launch",
             "name": "Debug unit tests in executable 'atalanta'",

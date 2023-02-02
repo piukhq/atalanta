@@ -1,3 +1,4 @@
+#![warn(clippy::unwrap_used, clippy::expect_used)]
 use amiquip::{Connection, Exchange, Publish};
 use chrono::Utc;
 use color_eyre::Result;
