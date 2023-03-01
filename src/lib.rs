@@ -2,3 +2,4 @@
 pub mod models;
 pub mod configuration;
 pub mod initialise;
+pub mod providers;

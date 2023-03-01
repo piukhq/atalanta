@@ -8,4 +8,6 @@ pub struct Transaction {
     pub merchant_name: String,
     pub transaction_id: String,
     pub auth_code: String,
+    pub identifier: String,
+    pub token: String,
 }

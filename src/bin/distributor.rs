@@ -1,8 +1,85 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-fn main() {
+use amiquip::Connection;
+use color_eyre::Result;
+use std::time::Duration;
 
-    println!("Hello from distributor!");
-    println!("Load configuration!");
-    println!("Load payment card user data!");
-    println!("Produce transactions!");
+use atalanta::configuration::{load_config, load_settings};
+use atalanta::initialise::startup;
+use atalanta::models::{Config, Settings};
+use atalanta::providers::*;
+
+fn main() -> Result<()> {
+    startup()?;
+
+    let config_data: Config = load_config()?;
+    let settings: Settings = load_settings()?;
+
+    println!("Distributing {} transactions.", config_data.merchant_slug);
+
+    routing(settings)?;
+    // transaction_consumer()?;
+
+    Ok(())
+}
+
+fn routing(settings: Settings) -> Result<()> {
+    let mut provider = String::with_capacity(25);
+
+    if settings.environment == "LOCAL"{
+        provider = std::env::args()
+        .nth(1)
+        .expect("Pass a provider slug as first argument");
+    }
+    else {
+        println!("Live configuration and settings missing")
+    }
+
+    // Create rabbitmq connection and channel
+    // Open connection.
+    let mut connection = Connection::insecure_open("amqp://localhost:5672")?;
+    // Open a channel - None says let the library choose the channel ID.
+    let channel = connection.open_channel(None)?;
+
+    match provider.as_str() {
+        "wasabi-club" => {
+            let consumer = TimedConsumer {
+                channel,
+                delay: Duration::from_secs(10),
+            };
+            let formatter = VisaAuthFormatter { };
+            let sender = SFTPSender {
+                host: "sftp://wasabi.com".to_string(),
+                port: 22,
+            };
+
+            send_message(consumer, formatter, sender)?;
+        }
+        "visa-auth" => {
+            let consumer = InstantConsumer {
+                channel,
+            };
+            let formatter = VisaAuthFormatter { };
+            let sender = APISender {
+                url: "http://192.168.50.247:9090/auth_transactions/visa".to_string(),
+            };
+
+            send_message(consumer, formatter, sender)?;
+        }
+        "visa-settlement" => {
+            let consumer = TimedConsumer {
+                channel,
+                delay: Duration::from_secs(10),
+            };
+            let formatter = VisaAuthFormatter { };
+            let sender = APISender {
+                url: "http://192.168.50.247:9090/auth_transactions/visa".to_string(),
+            };
+
+            send_message(consumer, formatter, sender)?;
+        }
+        _ => panic!("No process available for {}", provider),
+    }
+
+    connection.close()?;
+
+    Ok(())
 }
