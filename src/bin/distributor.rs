@@ -45,7 +45,7 @@ fn routing(settings: Settings) -> Result<()> {
                 channel,
                 delay: Duration::from_secs(10),
             };
-            let formatter = VisaAuthFormatter { };
+            let formatter = WasabiFormatter { };
             let sender = SFTPSender {
                 host: "sftp://wasabi.com".to_string(),
                 port: 22,

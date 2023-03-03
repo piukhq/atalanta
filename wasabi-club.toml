@@ -1,5 +1,5 @@
 transaction_rate = 900
 merchant_slug = "wasabi-club"
 payment_provider = "visa"
-deployed_slug = "visa-settlement"
-routing_key = "transactions.perf-visa.*"
+deployed_slug = "wasabi-club"
+routing_key = "transactions.*.perf-wasabi-club"

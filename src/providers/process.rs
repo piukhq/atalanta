@@ -51,7 +51,6 @@ pub struct BlobSender {
 impl Sender for BlobSender {
     fn send(&self, transactions: String) -> Result<()> {
         println!("BLOB: {transactions:?} to {}", self.container);
-        write_to_file(transactions)?;
         Ok(())
     }
 }
@@ -165,6 +164,7 @@ impl Consumer for TimedConsumer {
         println!("Routing key: {}", routing_key);
         let mut start = Instant::now();
         let mut output_transaction = String::new();
+        let mut transactions: Vec<Transaction>= Vec::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
         for message in consumer.receiver().into_iter() {
@@ -174,12 +174,14 @@ impl Consumer for TimedConsumer {
                         start = Instant::now();
                     }
                     count += 1;
+                    transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
+                    consumer.ack(delivery)?;
 
-                    if count == 100 {
-                        let tx: Transaction = rmp_serde::from_slice(&delivery.body).unwrap();
-                        f(vec![tx])?;
-                        consumer.ack(delivery)?;
+                    if count == 3 {
+                        f(transactions.clone())?;
+                        
                         count = 0;
+                        transactions.clear();
                     }
                 }
                 other => {
@@ -222,7 +224,7 @@ pub struct WasabiFormatter {}
 
 impl Formatter for WasabiFormatter {
     fn format(&self, transactions: Vec<Transaction>) -> Result<String> {
-        let transaction = wasabi(&transactions[0])?;
+        let transaction = wasabi_transaction(transactions)?;
 
         Ok(transaction)
     }

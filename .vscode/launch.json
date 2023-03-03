@@ -38,7 +38,7 @@
                 }
             },
             "args": [
-                "visa-settlement"
+                "wasabi-club"
             ],
             "cwd": "${workspaceFolder}"
         },
