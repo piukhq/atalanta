@@ -2,7 +2,6 @@
 use crate::configuration::load_config;
 use crate::models::Transaction;
 use csv::Writer;
-use num::pow;
 use color_eyre::Result;
 use rand::Rng;
 use rust_decimal::prelude::*;
