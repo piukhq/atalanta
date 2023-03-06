@@ -1,10 +1,9 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::configuration::load_config;
-use crate::models::Transaction;
+use crate::{models::Transaction, providers::to_pounds};
 use csv::Writer;
 use color_eyre::Result;
 use rand::Rng;
-use rust_decimal::prelude::*;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -49,10 +48,6 @@ pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
     }
     let data = String::from_utf8(wtr.into_inner()?)?;
     Ok(data)
-}
-
-fn to_pounds(amount: i16) -> Result<String> {
-    Ok(Decimal::new(amount.into(), 2).to_string())
 }
 
 fn padded_random_int(raise_power: u32, num_chars: u32) -> Result<String> {

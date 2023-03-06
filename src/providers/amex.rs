@@ -1,9 +1,8 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use crate::models::Transaction;
+use crate::{models::Transaction, providers::to_pounds};
 use chrono::FixedOffset;
 use color_eyre::Result;
-use rust_decimal::prelude::*;
 use serde_json::json;
 
 pub fn amex_auth(transaction: &Transaction) -> Result<String> {
@@ -42,10 +41,6 @@ pub fn amex_settlement(transaction: &Transaction) -> Result<String> {
     );
 
     Ok(settlement.to_string())
-}
-
-fn to_pounds(amount: i16) -> Result<String> {
-    Ok(Decimal::new(amount.into(), 2).to_string())
 }
 
 #[cfg(test)]
@@ -89,6 +84,40 @@ mod tests {
         assert_eq!(
             json_result.unwrap(),
             auth_tx_json
+        );
+    }
+
+    #[test]
+    fn amex_settlement_valid() {
+        let dt = Utc::now();
+        let test_transaction =Transaction {
+            amount: 245,
+            transaction_date: dt,
+            merchant_name: "test_merchant".to_string(),
+            transaction_id: "test_transaction_id_1".to_string(),
+            auth_code: "123456".to_string(),
+            identifier: "12345678".to_string(),
+            token: "98765432123456789".to_string(),
+        };
+
+        let json_result = amex_settlement(&test_transaction);
+        let settlement_tx_json = json!({
+            "transactionId": "test_transaction_id_1".to_string(),
+            "offerId": "test_transaction_id_1".to_string(),
+            "transactionDate": dt.to_string(),
+            "transactionAmount": "2.45",
+            "cardToken": "98765432123456789".to_string(),
+            "merchantNumber": "12345678".to_string(),
+            "approvalCode": "123456".to_string(),
+            "dpan": "firstsixXXXXXlastfour",
+            "partnerId": "AADP0050",
+            "recordId": "0224133845625011230183160001602891525AADP00400",
+            "currencyCode": "840"
+        }).to_string();
+    
+        assert_eq!(
+            json_result.unwrap(),
+            settlement_tx_json
         );
     }
 }

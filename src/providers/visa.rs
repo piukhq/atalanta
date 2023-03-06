@@ -1,9 +1,8 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use crate::models::Transaction;
+use crate::{models::Transaction, providers::to_pounds};
 use chrono::Utc;
 use color_eyre::Result;
-use rust_decimal::prelude::*;
 use serde_json::json;
 
 pub fn visa_auth(transaction: &Transaction) -> Result<String> {
@@ -87,10 +86,6 @@ pub fn visa_settlement(transaction: &Transaction) -> Result<String> {
     );
 
     Ok(settlement.to_string())
-}
-
-fn to_pounds(amount: i16) -> Result<String> {
-    Ok(Decimal::new(amount.into(), 2).to_string())
 }
 
 #[cfg(test)]
