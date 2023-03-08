@@ -6,7 +6,9 @@ use color_eyre::Result;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::Rng;
+use std::os::unix::thread;
 use std::time;
+use time::Duration;
 use uuid::Uuid;
 
 use atalanta::configuration::{load_config, load_settings};
@@ -38,10 +40,10 @@ fn main() -> Result<()> {
 fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> {
     //Manages the process of creating raw transactions
     let mut count: u64 = 0;
-    let transactions_per_minute: u64 = 60;
-    let transactions_per_second: u64 = transactions_per_minute / 60;
-    let delay = time::Duration::from_secs(transactions_per_second);
-    println!("Delay setting - TODO: {}", delay.as_secs());
+    let mut total_count: u64 = 0;
+
+    let delay = time::Duration::from_millis(1000/config_data.transactions_per_second);
+    println!("Delay setting - TODO: {}", delay.as_millis());
     
     let mut tx: Transaction;
 
@@ -64,6 +66,7 @@ fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> 
 
     loop {
         count += 1;
+        total_count += 1;
         println!("Count: {}", count);
 
         tx = create_transaction(&config_data)?;
@@ -77,12 +80,15 @@ fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> 
         let routing_key = format!("transactions.{}.{}", payment_key, merchant_key);
         println!("routing_key: {}", routing_key);
 
-        queue_transaction(&exchange, tx, &routing_key)?;
-
-        if count == 5 {
-            println!("Finished");
+        if total_count >= 10{
+            println!("Produced {} transactions.", count);
             break;
         }
+
+
+        queue_transaction(&exchange, tx, &routing_key)?;
+
+        std::thread::sleep(delay);
     }
 
     queue_connection.close()?;
@@ -92,7 +98,7 @@ fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> 
 
 fn create_transaction(config: &Config) -> Result<Transaction> {
     return Ok(Transaction {
-        amount: rand::thread_rng().gen_range(0..100),
+        amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
         merchant_name: config.merchant_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),

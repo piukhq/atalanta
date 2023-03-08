@@ -11,7 +11,7 @@ pub fn load_config() -> Result<Config> {
     let conf: Config = toml::from_str(&contents)?;
 
     println!("Loading config, merchant slug:'{}'", conf.merchant_slug);
-    println!("Transaction rate: {}", conf.transaction_rate);
+    println!("Transaction rate: {}", conf.transactions_per_second);
 
     Ok(conf)
 }

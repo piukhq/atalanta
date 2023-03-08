@@ -142,7 +142,7 @@ impl Consumer for TimedConsumer {
         let routing_key = config_data.routing_key;
         let queue_name = format!("perf-{}", config_data.deployed_slug);
 
-        let mut count: u64 = 0;
+        let mut count: u32 = 0;
 
         let exchange = self.channel.exchange_declare(
             ExchangeType::Topic,
@@ -150,7 +150,7 @@ impl Consumer for TimedConsumer {
             ExchangeDeclareOptions::default(),
         )?;
         let queue = self.channel.queue_declare(
-            queue_name,
+            &queue_name,
             QueueDeclareOptions::default(),
         )?;
         self.channel.queue_bind(
@@ -162,12 +162,19 @@ impl Consumer for TimedConsumer {
 
         println!("Waiting for messages. Press Ctrl-C to exit.");
         println!("Routing key: {}", routing_key);
+        let initial_number_transaction_on_queue = queue.declared_message_count().unwrap();
+        let mut local_batch_size = config_data.batch_size;
+        if initial_number_transaction_on_queue < local_batch_size{
+            local_batch_size = initial_number_transaction_on_queue;
+        }
+
         let mut start = Instant::now();
         let mut output_transaction = String::new();
         let mut transactions: Vec<Transaction>= Vec::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
-        for message in consumer.receiver().into_iter() {
+        loop {
+        for message in consumer.receiver().try_iter() {
             match message {
                 ConsumerMessage::Delivery(delivery) => {
                     if count == 0 {
@@ -177,12 +184,13 @@ impl Consumer for TimedConsumer {
                     transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
                     consumer.ack(delivery)?;
 
-                    if count == 3 {
+                    if count == local_batch_size {
                         f(transactions.clone())?;
                         
                         count = 0;
                         transactions.clear();
                     }
+
                 }
                 other => {
                     println!("Consumer ended: {:?}", other);
@@ -190,6 +198,14 @@ impl Consumer for TimedConsumer {
                 }
             }
         }
+        println!("Consumer ended - waiting" );
+        std::thread::sleep(Duration::from_secs(30));
+
+        let duration = start.elapsed();
+        if duration >= Duration::from_secs(120) {
+            break;
+        }
+    }
 
         Ok(())
 
