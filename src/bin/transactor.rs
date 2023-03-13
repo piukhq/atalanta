@@ -3,12 +3,12 @@
 use amiquip::{Connection, Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
 use chrono::Utc;
 use color_eyre::Result;
+use csv::StringRecord;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::Rng;
-use std::os::unix::thread;
+use std::fs::File;
 use std::time;
-use time::Duration;
 use uuid::Uuid;
 
 use atalanta::configuration::{load_config, load_settings};
@@ -26,8 +26,10 @@ fn main() -> Result<()> {
 
     println!("Configuration: '{:?}'", config_data);
 
+    let payment_card_tokens = load_payment_card_tokens(&config_data.merchant_slug)?;
+
     let start = time::Instant::now();
-    let transaction_count: u64 = transaction_producer(config_data, settings)?;
+    let transaction_count: u64 = transaction_producer(config_data, settings, payment_card_tokens)?;
     let duration = start.elapsed();
     println!(
         "Final count: {}, duration = {:?}",
@@ -37,14 +39,36 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> {
+fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>> {
+    // Load token and slugs derived from the Hemres database
+    //Only tokens related to the current retailer are loaded
+    let mut tokens = Vec::new();
+
+    let file_path = "./files/hermes_tokens.csv";
+    let file = File::open(file_path)?;
+    let mut rdr = csv::ReaderBuilder::new()
+    .has_headers(false)
+    .from_reader(file);
+
+    for result in rdr.records() {
+        let record = result?;
+        if record.iter().any(|field| field == merchant_slug) {
+            tokens.push(record);
+        }
+    }
+
+    Ok(tokens)
+}
+
+
+fn transaction_producer(config_data: Config, settings: Settings, payment_card_tokens: Vec<StringRecord>) -> Result<u64> {
     //Manages the process of creating raw transactions
     let mut count: u64 = 0;
     let mut total_count: u64 = 0;
 
-    let delay = time::Duration::from_millis(1000/config_data.transactions_per_second);
+    let delay = time::Duration::from_millis(1000 / config_data.transactions_per_second);
     println!("Delay setting - TODO: {}", delay.as_millis());
-    
+
     let mut tx: Transaction;
 
     let mut queue_connection;
@@ -69,22 +93,20 @@ fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> 
         total_count += 1;
         println!("Count: {}", count);
 
-        tx = create_transaction(&config_data)?;
+        tx = create_transaction(&config_data, &payment_card_tokens)?;
 
         // Select a payment provider based on weighted selection,
         // visa provides many more transactions than mastercard or amex
-        let payment_provider = select_payment_provider()?;
+        let payment_provider = select_payment_provider(&config_data.percentage)?;
         let payment_key = format!("perf-{}", payment_provider);
-        let merchant_key = format!("perf-{}",config_data.merchant_slug);
-        println!("Weighted payment slug choice - TODO: {}", payment_key);
+        let merchant_key = format!("perf-{}", config_data.merchant_slug);
         let routing_key = format!("transactions.{}.{}", payment_key, merchant_key);
         println!("routing_key: {}", routing_key);
 
-        if total_count >= 10{
+        if total_count >= config_data.maximum_number_transactions {
             println!("Produced {} transactions.", count);
             break;
         }
-
 
         queue_transaction(&exchange, tx, &routing_key)?;
 
@@ -96,7 +118,8 @@ fn transaction_producer(config_data: Config, settings: Settings) -> Result<u64> 
     Ok(count)
 }
 
-fn create_transaction(config: &Config) -> Result<Transaction> {
+fn create_transaction(config: &Config, payment_card_tokens: &Vec<StringRecord>) -> Result<Transaction> {
+    let token = payment_card_tokens.choose(&mut rand::thread_rng());
     return Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
@@ -104,16 +127,14 @@ fn create_transaction(config: &Config) -> Result<Transaction> {
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
         identifier: "12345678".to_string(),
-        token: "token_1234".to_string(),
+        token: token.unwrap()[0].to_string(),
     });
 }
 
-fn select_payment_provider() -> Result<String> {
-    let choices = ["visa", "mastercard", "amex"];
-    let weights = [5, 2, 1];
-    let dist = WeightedIndex::new(&weights).unwrap();
+fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
+    let dist = WeightedIndex::new(percentages.iter().map(|item| item.1)).unwrap();
     let mut rng = thread_rng();
-    let provider = choices[dist.sample(&mut rng)];
+    let provider = &percentages[dist.sample(&mut rng)].0;
 
     Ok(provider.to_string())
 }

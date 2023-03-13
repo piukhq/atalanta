@@ -11,7 +11,7 @@ use crate::configuration::load_config;
 use crate::models::{Config, Transaction};
 use crate::providers::*;
 pub trait Sender {
-    fn send(&self, transactions: String) -> Result<()>;
+    fn send(&self, transactions: Vec<String>) -> Result<()>;
 }
 
 /// A struct that can send messages via SFTP.
@@ -21,7 +21,7 @@ pub struct SFTPSender {
 }
 
 impl Sender for SFTPSender {
-    fn send(&self, transactions: String) -> Result<()> {
+    fn send(&self, transactions: Vec<String>) -> Result<()> {
         println!("SFTP: {transactions:?} to {}:{}", self.host, self.port);
         write_to_file(transactions)?;
         Ok(())
@@ -34,11 +34,12 @@ pub struct APISender {
 }
 
 impl Sender for APISender {
-    fn send(&self, transactions: String) -> Result<()> {
+    fn send(&self, transactions: Vec<String>) -> Result<()> {
         let client = reqwest::blocking::Client::new();
-        let message = transactions;
 
-        let resp = client.post(&self.url).body(message).send()?;
+        for tx in transactions {
+            let resp = client.post(&self.url).body(tx).send()?;
+        }
         Ok(())
     }
 }
@@ -49,7 +50,7 @@ pub struct BlobSender {
 }
 
 impl Sender for BlobSender {
-    fn send(&self, transactions: String) -> Result<()> {
+    fn send(&self, transactions: Vec<String>) -> Result<()> {
         println!("BLOB: {transactions:?} to {}", self.container);
         Ok(())
     }
@@ -164,48 +165,50 @@ impl Consumer for TimedConsumer {
         println!("Routing key: {}", routing_key);
         let initial_number_transaction_on_queue = queue.declared_message_count().unwrap();
         let mut local_batch_size = config_data.batch_size;
-        if initial_number_transaction_on_queue < local_batch_size{
+        if initial_number_transaction_on_queue > 0 && initial_number_transaction_on_queue < local_batch_size{
             local_batch_size = initial_number_transaction_on_queue;
         }
 
         let mut start = Instant::now();
-        let mut output_transaction = String::new();
         let mut transactions: Vec<Transaction>= Vec::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
         loop {
-        for message in consumer.receiver().try_iter() {
-            match message {
-                ConsumerMessage::Delivery(delivery) => {
-                    if count == 0 {
-                        start = Instant::now();
-                    }
-                    count += 1;
-                    transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
-                    consumer.ack(delivery)?;
+            println!("Consumer sleep - waiting" );
+            std::thread::sleep(Duration::from_secs(30));
+            println!("Waking up after sleep");
 
-                    if count == local_batch_size {
-                        f(transactions.clone())?;
-                        
-                        count = 0;
-                        transactions.clear();
-                    }
+            for message in consumer.receiver().try_iter() {
+                println!("Consuming messages");
+                match message {
+                    ConsumerMessage::Delivery(delivery) => {
+                        if count == 0 {
+                            start = Instant::now();
+                        }
+                        count += 1;
+                        transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
+                        consumer.ack(delivery)?;
 
-                }
-                other => {
-                    println!("Consumer ended: {:?}", other);
-                    break;
+                        if count == local_batch_size {
+                            f(transactions.clone())?;
+                            
+                            count = 0;
+                            transactions.clear();
+                        }
+
+                    }
+                    other => {
+                        println!("Consumer ended: {:?}", other);
+                        break;
+                    }
                 }
             }
+            println!("Consumer ended - waiting" );
+            let duration = start.elapsed();
+            if duration >= Duration::from_secs(120) {
+                break;
+            }
         }
-        println!("Consumer ended - waiting" );
-        std::thread::sleep(Duration::from_secs(30));
-
-        let duration = start.elapsed();
-        if duration >= Duration::from_secs(120) {
-            break;
-        }
-    }
 
         Ok(())
 
@@ -213,36 +216,44 @@ impl Consumer for TimedConsumer {
 }
 /// A trait for formatting transaction data for each retailer.
 pub trait Formatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<String>;
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>>;
 }
 
 pub struct VisaAuthFormatter {}
 
 impl Formatter for VisaAuthFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<String> {
-        let transaction = visa_auth(&transactions[0])?;
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
+        let mut formatted_transactions:Vec<String>= Vec::new();
+        formatted_transactions.push(visa_auth(&transactions[0])?);
 
-        Ok(transaction)
+        Ok(formatted_transactions)
     }
 }
 
 pub struct VisaSettlementFormatter {}
 
 impl Formatter for VisaSettlementFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<String> {
-        let transaction = visa_settlement(&transactions[0])?;
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
+        let mut formatted_transactions:Vec<String>= Vec::new();
 
-        Ok(transaction)
+        for tx in transactions {
+             let transaction = visa_settlement(&tx)?;
+             formatted_transactions.push(transaction)
+        }
+
+        Ok(formatted_transactions)
     }
 }
 
 pub struct WasabiFormatter {}
 
 impl Formatter for WasabiFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<String> {
-        let transaction = wasabi_transaction(transactions)?;
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
+        let mut formatted_transactions:Vec<String>= Vec::new();
 
-        Ok(transaction)
+        formatted_transactions.push(wasabi_transaction(transactions)?);
+
+        Ok(formatted_transactions)
     }
 }
 
@@ -259,7 +270,7 @@ where
     })
 }
 
-fn write_to_file(data: String) -> Result<()> {
+fn write_to_file(data: Vec<String>) -> Result<()> {
     // Creates new `Writer` for `stdout`
     let path = "test_file.csv";
 

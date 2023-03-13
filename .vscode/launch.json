@@ -38,7 +38,7 @@
                 }
             },
             "args": [
-                "wasabi-club"
+                "visa-auth"
             ],
             "cwd": "${workspaceFolder}"
         },
@@ -78,6 +78,27 @@
             },
             "args": [
                 "wasabi",
+            ],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example hermes file reader",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=hermes_file_reader",
+                    "--package=atalanta"
+                ],
+                "filter": {
+                    "name": "hermes_file_reader",
+                    "kind": "example"
+                }
+            },
+            "args": [
+                "./files/hermes_tokens.csv",
+                "wasabi-club"
             ],
             "cwd": "${workspaceFolder}"
         }

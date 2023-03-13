@@ -15,19 +15,17 @@ fn main() -> Result<()> {
 
     println!("Distributing {} transactions.", config_data.merchant_slug);
 
-    routing(settings)?;
+    routing(settings, config_data)?;
     // transaction_consumer()?;
 
     Ok(())
 }
 
-fn routing(settings: Settings) -> Result<()> {
+fn routing(settings: Settings, config_data: Config) -> Result<()> {
     let mut provider = String::with_capacity(25);
 
     if settings.environment == "LOCAL"{
-        provider = std::env::args()
-        .nth(1)
-        .expect("Pass a provider slug as first argument");
+        provider = config_data.deployed_slug;
     }
     else {
         println!("Live configuration and settings missing")
@@ -59,7 +57,7 @@ fn routing(settings: Settings) -> Result<()> {
             };
             let formatter = VisaAuthFormatter { };
             let sender = APISender {
-                url: "http://192.168.50.247:9090/auth_transactions/visa".to_string(),
+                url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
             };
 
             send_message(consumer, formatter, sender)?;
@@ -69,9 +67,9 @@ fn routing(settings: Settings) -> Result<()> {
                 channel,
                 delay: Duration::from_secs(10),
             };
-            let formatter = VisaAuthFormatter { };
+            let formatter = VisaSettlementFormatter { };
             let sender = APISender {
-                url: "http://192.168.50.247:9090/auth_transactions/visa".to_string(),
+                url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
             };
 
             send_message(consumer, formatter, sender)?;

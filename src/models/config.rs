@@ -8,4 +8,6 @@ pub struct Config {
     pub amount_min: i16,
     pub amount_max: i16,
     pub transactions_per_second: u64,
+    pub maximum_number_transactions: u64,
+    pub percentage: [(String, i32); 3],
 }
