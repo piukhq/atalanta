@@ -5,10 +5,11 @@ mod visa;
 mod wasabi;
 mod process;
 mod amex;
-pub mod iceland;
+mod iceland;
 
 pub use visa::{visa_auth, visa_settlement};
 pub use wasabi::wasabi_transaction;
+pub use iceland::iceland_transaction;
 pub use process::*;
 
 pub fn to_pounds(amount: i16) -> Result<String> {

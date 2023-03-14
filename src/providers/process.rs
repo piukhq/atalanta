@@ -11,7 +11,7 @@ use crate::configuration::load_config;
 use crate::models::{Config, Transaction};
 use crate::providers::*;
 pub trait Sender {
-    fn send(&self, transactions: Vec<String>) -> Result<()>;
+    fn send(&self, transactions: String) -> Result<()>;
 }
 
 /// A struct that can send messages via SFTP.
@@ -21,7 +21,7 @@ pub struct SFTPSender {
 }
 
 impl Sender for SFTPSender {
-    fn send(&self, transactions: Vec<String>) -> Result<()> {
+    fn send(&self, transactions: String) -> Result<()> {
         println!("SFTP: {transactions:?} to {}:{}", self.host, self.port);
         write_to_file(transactions)?;
         Ok(())
@@ -34,12 +34,11 @@ pub struct APISender {
 }
 
 impl Sender for APISender {
-    fn send(&self, transactions: Vec<String>) -> Result<()> {
+    fn send(&self, transactions: String) -> Result<()> {
         let client = reqwest::blocking::Client::new();
 
-        for tx in transactions {
-            let resp = client.post(&self.url).body(tx).send()?;
-        }
+        let resp = client.post(&self.url).body(transactions).send()?;
+
         Ok(())
     }
 }
@@ -50,7 +49,7 @@ pub struct BlobSender {
 }
 
 impl Sender for BlobSender {
-    fn send(&self, transactions: Vec<String>) -> Result<()> {
+    fn send(&self, transactions: String) -> Result<()> {
         println!("BLOB: {transactions:?} to {}", self.container);
         Ok(())
     }
@@ -257,6 +256,17 @@ impl Formatter for WasabiFormatter {
     }
 }
 
+pub struct IcelandFormatter {}
+
+impl Formatter for IcelandFormatter {
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
+        let mut formatted_transactions:Vec<String>= Vec::new();
+
+        formatted_transactions.push(iceland_transaction(transactions)?);
+
+        Ok(formatted_transactions)
+    }
+}
 /// A generic function that can send messages via any Sender.
 pub fn send_message<C, F, S>(consumer: C, formatter: F, sender: S) -> Result<()>
 where
@@ -266,11 +276,11 @@ where
 {
     consumer.consume(|transactions| {
         let transaction_data = formatter.format(transactions)?;
-        sender.send(transaction_data)
+        sender.send(transaction_data.join("\n"))
     })
 }
 
-fn write_to_file(data: Vec<String>) -> Result<()> {
+fn write_to_file(data: String) -> Result<()> {
     // Creates new `Writer` for `stdout`
     let path = "test_file.csv";
 

@@ -51,6 +51,19 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
 
             send_message(consumer, formatter, sender)?;
         }
+        "iceland-bonus-card" => {
+            let consumer = TimedConsumer {
+                channel,
+                delay: Duration::from_secs(10),
+            };
+            let formatter = IcelandFormatter { };
+            let sender = SFTPSender {
+                host: "sftp://wasabi.com".to_string(),
+                port: 22,
+            };
+
+            send_message(consumer, formatter, sender)?;
+        }
         "visa-auth" => {
             let consumer = InstantConsumer {
                 channel,
