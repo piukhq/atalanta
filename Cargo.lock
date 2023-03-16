@@ -150,6 +150,8 @@ name = "atalanta"
 version = "0.1.0"
 dependencies = [
  "amiquip",
+ "azure_core",
+ "azure_storage",
  "azure_storage_blobs",
  "chrono",
  "color-eyre",

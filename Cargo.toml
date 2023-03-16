@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 amiquip = "0.4"
+azure_core = "0.10.0"
+azure_storage = "0.10.0"
 azure_storage_blobs = "0.10.0"
 chrono = { version = "0.4", features = ["serde"] }
 color-eyre = "0.6.2"

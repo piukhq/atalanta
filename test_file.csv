@@ -1,6 +1,5 @@
-"store_no,entry_no,transaction_no,tender_type,amount,card_number,card_type_name,auth_code,authorization_ok,date,time,eft_merchant_no,receipt_no
-A076,16277,123456789,3,255.73,first_six******last_four,visa,514474,1,2023-03-13,14-42-20,12345678,0008609024189
-A076,16277,123456789,3,117.11,first_six******last_four,visa,024694,1,2023-03-13,14-42-21,12345678,0222611476373
-A076,16277,123456789,3,10.53,first_six******last_four,visa,493830,1,2023-03-13,14-42-22,12345678,0425864535598
-A076,16277,123456789,3,218.67,first_six******last_four,visa,259576,1,2023-03-13,14-42-23,12345678,0336433950924
-"
+store_no,entry_no,transaction_no,tender_type,amount,card_number,card_type_name,auth_code,authorization_ok,date,time,eft_merchant_no,receipt_no
+A076,16277,123456789,3,95.48,first_six******last_four,visa,193971,1,2023-03-14,14-25-02,12345678,0618232678051
+A076,16277,123456789,3,113.11,first_six******last_four,visa,552936,1,2023-03-14,14-25-03,12345678,0736389683976
+A076,16277,123456789,3,31.10,first_six******last_four,visa,385973,1,2023-03-14,14-25-04,12345678,0489135150772
+A076,16277,123456789,3,179.59,first_six******last_four,visa,240863,1,2023-03-14,14-25-05,12345678,0930963688232

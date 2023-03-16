@@ -33,7 +33,7 @@ pub fn amex_settlement(transaction: &Transaction) -> Result<String> {
             "cardToken": transaction.token,
             "merchantNumber": transaction.identifier,
             "approvalCode": transaction.auth_code,
-            "dpan": "firstsixXXXXXlastfour",
+            "dpan": "",
             "partnerId": "AADP0050",
             "recordId": "0224133845625011230183160001602891525AADP00400",
             "currencyCode": "840"

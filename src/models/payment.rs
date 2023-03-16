@@ -10,4 +10,6 @@ pub struct Transaction {
     pub auth_code: String,
     pub identifier: String,
     pub token: String,
+    pub first_six: String,
+    pub last_four: String,
 }

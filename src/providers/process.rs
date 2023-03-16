@@ -4,7 +4,8 @@ use amiquip::{
     QueueDeclareOptions,
 };
 use color_eyre::Result;
-use std::thread;
+use csv::Reader;
+use std::{thread, fs};
 use std::time::{Duration, Instant};
 
 use crate::configuration::load_config;
@@ -36,6 +37,7 @@ pub struct APISender {
 impl Sender for APISender {
     fn send(&self, transactions: String) -> Result<()> {
         let client = reqwest::blocking::Client::new();
+        println!("{:?}", transactions);
 
         let resp = client.post(&self.url).body(transactions).send()?;
 
@@ -283,12 +285,7 @@ where
 fn write_to_file(data: String) -> Result<()> {
     // Creates new `Writer` for `stdout`
     let path = "test_file.csv";
-
-    let mut writer = csv::Writer::from_path(path)?;
-
-    writer.serialize(data)?;
-
-    writer.flush()?;
+    fs::write(path, data)?;
 
     Ok(())
 }

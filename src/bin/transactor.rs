@@ -93,8 +93,6 @@ fn transaction_producer(config_data: Config, settings: Settings, payment_card_to
         total_count += 1;
         println!("Count: {}", count);
 
-        tx = create_transaction(&config_data, &payment_card_tokens)?;
-
         // Select a payment provider based on weighted selection,
         // visa provides many more transactions than mastercard or amex
         let payment_provider = select_payment_provider(&config_data.percentage)?;
@@ -102,6 +100,11 @@ fn transaction_producer(config_data: Config, settings: Settings, payment_card_to
         let merchant_key = format!("perf-{}", config_data.merchant_slug);
         let routing_key = format!("transactions.{}.{}", payment_key, merchant_key);
         println!("routing_key: {}", routing_key);
+
+        //Select a token to use for this payment provider, along with first six and last four
+        //This could be an inefficient process since we have to look through a list of StringRecords
+        let payment_details = select_payment_details(&payment_card_tokens, payment_provider)?;
+        tx = create_transaction(&config_data, &payment_details)?;
 
         if total_count >= config_data.maximum_number_transactions {
             println!("Produced {} transactions.", count);
@@ -118,6 +121,19 @@ fn transaction_producer(config_data: Config, settings: Settings, payment_card_to
     Ok(count)
 }
 
+fn select_payment_details(payment_card_tokens: &Vec<StringRecord>, payment_provider: String)  -> Result<Vec<StringRecord>> {
+
+    let mut provider_list = Vec::new();
+    for item in payment_card_tokens {
+        if item[2] == payment_provider {
+            provider_list.push(item.clone());
+        }
+    }
+
+    Ok(provider_list)
+
+}
+
 fn create_transaction(config: &Config, payment_card_tokens: &Vec<StringRecord>) -> Result<Transaction> {
     let token = payment_card_tokens.choose(&mut rand::thread_rng());
     return Ok(Transaction {
@@ -128,6 +144,8 @@ fn create_transaction(config: &Config, payment_card_tokens: &Vec<StringRecord>) 
         auth_code: create_auth_code()?,
         identifier: "12345678".to_string(),
         token: token.unwrap()[0].to_string(),
+        first_six: token.unwrap()[3].to_string(),
+        last_four: token.unwrap()[4].to_string(),
     });
 }
 
