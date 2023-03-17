@@ -7,4 +7,4 @@ batch_size = 5
 amount_min = 100
 amount_max = 30000
 maximum_number_transactions = 5
-percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]
+percentage = [['visa', 0], ['mastercard', 0], ['amex', 100]]

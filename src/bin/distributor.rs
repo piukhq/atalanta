@@ -87,6 +87,18 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
 
             send_message(consumer, formatter, sender)?;
         }
+        "amex-auth" => {
+            let consumer = InstantConsumer {
+                channel,
+            };
+            let formatter = AmexAuthFormatter { };
+            let sender = AmexSender {
+                url: "http://192.168.50.70:9090/auth_transactions".to_string(),
+            };
+
+            send_message(consumer, formatter, sender)?;
+        }
+
         _ => panic!("No process available for {}", provider),
     }
 

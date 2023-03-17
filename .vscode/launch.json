@@ -37,6 +37,10 @@
                     "kind": "bin"
                 }
             },
+            "env": {
+                "AMEX_CLIENT_ID": "DWHafwf8OLzbzL7vIQfZ6jXuYsuQf6EShJ4IkKoGBIwNd0xfNG",
+                "AMEX_CLIENT_SECRET": "dFuupR8r2TJPYUxpByBVBHHkJiR4nriZDCWndD4755jMsX0usq"
+            },
             "args": [
                 "visa-auth"
             ],

@@ -4,13 +4,15 @@ use amiquip::{
     QueueDeclareOptions,
 };
 use color_eyre::Result;
-use csv::Reader;
+use serde_json::{json};
 use std::{thread, fs};
 use std::time::{Duration, Instant};
 
 use crate::configuration::load_config;
 use crate::models::{Config, Transaction};
 use crate::providers::*;
+
+use super::amex::amex_auth;
 pub trait Sender {
     fn send(&self, transactions: String) -> Result<()>;
 }
@@ -40,6 +42,37 @@ impl Sender for APISender {
         println!("{:?}", transactions);
 
         let resp = client.post(&self.url).body(transactions).send()?;
+
+        Ok(())
+    }
+}
+
+pub struct AmexSender {
+    pub url: String,
+}
+
+impl Sender for AmexSender {
+    fn send(&self, transactions: String) -> Result<()> {
+        let client = reqwest::blocking::Client::new();
+        println!("{:?}", transactions);
+        let authorize_url = format!("{}/{}", &self.url, "authorize");
+        let client_id = std::env::var("AMEX_CLIENT_ID").expect("Client id not in environment variables");
+        let client_secret = std::env::var("AMEX_CLIENT_SECRET").expect("Client secret not in environment variables");
+        let authorize_body = json!({
+            "client_id": client_id,
+            "client_secret": client_secret
+        });
+
+        let authorize_resp = client.post(authorize_url).body(authorize_body.to_string()).send()?;
+        let authorize_text: String = authorize_resp.text().unwrap();
+        let api_key: serde_json::Value = serde_json::from_str(&authorize_text)?;
+        println!("Token {}", api_key["api_key"]);
+        let amex_url = format!("{}/{}", &self.url, "amex");
+        let resp = client
+        .post(amex_url)
+        .header("Authorization", format!("Token {}", api_key["api_key"].to_string().replace("\"", "")))
+        .body(transactions)
+        .send()?;
 
         Ok(())
     }
@@ -246,6 +279,16 @@ impl Formatter for VisaSettlementFormatter {
     }
 }
 
+pub struct AmexAuthFormatter {}
+
+impl Formatter for AmexAuthFormatter {
+    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
+        let mut formatted_transactions:Vec<String>= Vec::new();
+        formatted_transactions.push(amex_auth(&transactions[0])?);
+
+        Ok(formatted_transactions)
+    }
+}
 pub struct WasabiFormatter {}
 
 impl Formatter for WasabiFormatter {
