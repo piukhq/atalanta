@@ -1,7 +1,7 @@
 transactions_per_second = 1
 merchant_slug = "wasabi-club"
 payment_provider = "visa"
-deployed_slug = "visa-auth"
+deployed_slug = "wasabi-club"
 routing_key = "transactions.*.perf-wasabi-club"
 batch_size = 5
 amount_min = 100

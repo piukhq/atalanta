@@ -4,9 +4,9 @@ use amiquip::{
     QueueDeclareOptions,
 };
 use color_eyre::Result;
-use serde_json::{json};
-use std::{thread, fs};
+use serde_json::json;
 use std::time::{Duration, Instant};
+use std::{fs, thread};
 
 use crate::configuration::load_config;
 use crate::models::{Config, Transaction};
@@ -55,23 +55,30 @@ impl Sender for AmexSender {
         let client = reqwest::blocking::Client::new();
         println!("{:?}", transactions);
         let authorize_url = format!("{}/{}", &self.url, "authorize");
-        let client_id = std::env::var("AMEX_CLIENT_ID").expect("Client id not in environment variables");
-        let client_secret = std::env::var("AMEX_CLIENT_SECRET").expect("Client secret not in environment variables");
+        let client_id =
+            std::env::var("AMEX_CLIENT_ID").expect("Client id not in environment variables");
+        let client_secret = std::env::var("AMEX_CLIENT_SECRET")
+            .expect("Client secret not in environment variables");
         let authorize_body = json!({
             "client_id": client_id,
             "client_secret": client_secret
         });
 
-        let authorize_resp = client.post(authorize_url).body(authorize_body.to_string()).send()?;
-        let authorize_text: String = authorize_resp.text().unwrap();
-        let api_key: serde_json::Value = serde_json::from_str(&authorize_text)?;
-        println!("Token {}", api_key["api_key"]);
+        let authorize_resp = client
+            .post(authorize_url)
+            .body(authorize_body.to_string())
+            .send()?;
+        let authorize_json: serde_json::Value = authorize_resp.json()?;
+        println!("Token {}", authorize_json["api_key"]);
         let amex_url = format!("{}/{}", &self.url, "amex");
         let resp = client
-        .post(amex_url)
-        .header("Authorization", format!("Token {}", api_key["api_key"].to_string().replace("\"", "")))
-        .body(transactions)
-        .send()?;
+            .post(amex_url)
+            .header(
+                "Authorization",
+                format!("Token {}", authorize_json["api_key"].to_string().replace("\"", "")),
+            )
+            .body(transactions)
+            .send()?;
 
         Ok(())
     }
@@ -116,10 +123,9 @@ impl Consumer for InstantConsumer {
             "transactions",
             ExchangeDeclareOptions::default(),
         )?;
-        let queue = self.channel.queue_declare(
-            queue_name,
-            QueueDeclareOptions::default(),
-        )?;
+        let queue = self
+            .channel
+            .queue_declare(queue_name, QueueDeclareOptions::default())?;
         self.channel.queue_bind(
             queue.name(),
             exchange.name(),
@@ -160,17 +166,16 @@ impl Consumer for InstantConsumer {
 }
 
 // A consumer that reads messages off a queue and sends them after a delay.
-pub struct TimedConsumer {
+pub struct DelayConsumer {
     pub channel: Channel,
     pub delay: Duration,
 }
 
-impl Consumer for TimedConsumer {
+impl Consumer for DelayConsumer {
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
     {
-        thread::sleep(self.delay);
         let config_data: Config = load_config()?;
         let routing_key = config_data.routing_key;
         let queue_name = format!("perf-{}", config_data.deployed_slug);
@@ -182,10 +187,9 @@ impl Consumer for TimedConsumer {
             "transactions",
             ExchangeDeclareOptions::default(),
         )?;
-        let queue = self.channel.queue_declare(
-            &queue_name,
-            QueueDeclareOptions::default(),
-        )?;
+        let queue = self
+            .channel
+            .queue_declare(&queue_name, QueueDeclareOptions::default())?;
         self.channel.queue_bind(
             queue.name(),
             exchange.name(),
@@ -196,54 +200,44 @@ impl Consumer for TimedConsumer {
         println!("Waiting for messages. Press Ctrl-C to exit.");
         println!("Routing key: {}", routing_key);
         let initial_number_transaction_on_queue = queue.declared_message_count().unwrap();
-        let mut local_batch_size = config_data.batch_size;
-        if initial_number_transaction_on_queue > 0 && initial_number_transaction_on_queue < local_batch_size{
-            local_batch_size = initial_number_transaction_on_queue;
-        }
-
+        println!("{} queue has {} transactions", queue_name, initial_number_transaction_on_queue);
         let mut start = Instant::now();
-        let mut transactions: Vec<Transaction>= Vec::new();
+        let mut transactions: Vec<Transaction> = Vec::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
-        loop {
-            println!("Consumer sleep - waiting" );
-            std::thread::sleep(Duration::from_secs(30));
-            println!("Waking up after sleep");
 
-            for message in consumer.receiver().try_iter() {
-                println!("Consuming messages");
-                match message {
-                    ConsumerMessage::Delivery(delivery) => {
-                        if count == 0 {
-                            start = Instant::now();
-                        }
-                        count += 1;
-                        transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
-                        consumer.ack(delivery)?;
+        let no = consumer.receiver().len();
 
-                        if count == local_batch_size {
-                            f(transactions.clone())?;
-                            
-                            count = 0;
-                            transactions.clear();
-                        }
-
+        for message in consumer.receiver().iter() {
+            println!("Consuming messages");
+            match message {
+                ConsumerMessage::Delivery(delivery) => {
+                    if count == 0 {
+                        start = Instant::now();
                     }
-                    other => {
-                        println!("Consumer ended: {:?}", other);
-                        break;
+                    count += 1;
+                    transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
+                    consumer.ack(delivery)?;
+
+                    if count == config_data.batch_size {
+                        f(transactions.clone())?;
+
+                        count = 0;
+                        transactions.clear();
                     }
                 }
+                other => {
+                    println!("Consumer ended: {:?}", other);
+                    break;
+                }
             }
-            println!("Consumer ended - waiting" );
-            let duration = start.elapsed();
-            if duration >= Duration::from_secs(120) {
-                break;
-            }
+        }
+
+        if ! transactions.is_empty() {
+            f(transactions.clone())?;
         }
 
         Ok(())
-
     }
 }
 

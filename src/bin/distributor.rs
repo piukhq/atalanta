@@ -24,10 +24,9 @@ fn main() -> Result<()> {
 fn routing(settings: Settings, config_data: Config) -> Result<()> {
     let mut provider = String::with_capacity(25);
 
-    if settings.environment == "LOCAL"{
+    if settings.environment == "LOCAL" {
         provider = config_data.deployed_slug;
-    }
-    else {
+    } else {
         println!("Live configuration and settings missing")
     }
 
@@ -39,11 +38,11 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
 
     match provider.as_str() {
         "wasabi-club" => {
-            let consumer = TimedConsumer {
+            let consumer = DelayConsumer {
                 channel,
                 delay: Duration::from_secs(10),
             };
-            let formatter = WasabiFormatter { };
+            let formatter = WasabiFormatter {};
             let sender = SFTPSender {
                 host: "sftp://wasabi.com".to_string(),
                 port: 22,
@@ -52,11 +51,11 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             send_message(consumer, formatter, sender)?;
         }
         "iceland-bonus-card" => {
-            let consumer = TimedConsumer {
+            let consumer = DelayConsumer {
                 channel,
                 delay: Duration::from_secs(10),
             };
-            let formatter = IcelandFormatter { };
+            let formatter = IcelandFormatter {};
             let sender = SFTPSender {
                 host: "sftp://wasabi.com".to_string(),
                 port: 22,
@@ -65,10 +64,8 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             send_message(consumer, formatter, sender)?;
         }
         "visa-auth" => {
-            let consumer = InstantConsumer {
-                channel,
-            };
-            let formatter = VisaAuthFormatter { };
+            let consumer = InstantConsumer { channel };
+            let formatter = VisaAuthFormatter {};
             let sender = APISender {
                 url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
             };
@@ -76,11 +73,11 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             send_message(consumer, formatter, sender)?;
         }
         "visa-settlement" => {
-            let consumer = TimedConsumer {
+            let consumer = DelayConsumer {
                 channel,
                 delay: Duration::from_secs(10),
             };
-            let formatter = VisaSettlementFormatter { };
+            let formatter = VisaSettlementFormatter {};
             let sender = APISender {
                 url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
             };
@@ -88,10 +85,8 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             send_message(consumer, formatter, sender)?;
         }
         "amex-auth" => {
-            let consumer = InstantConsumer {
-                channel,
-            };
-            let formatter = AmexAuthFormatter { };
+            let consumer = InstantConsumer { channel };
+            let formatter = AmexAuthFormatter {};
             let sender = AmexSender {
                 url: "http://192.168.50.70:9090/auth_transactions".to_string(),
             };
