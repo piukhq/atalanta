@@ -1,5 +1,4 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
-use crate::configuration::load_config;
 use crate::{models::Transaction, providers::to_pounds};
 use csv::WriterBuilder;
 use color_eyre::Result;

@@ -12,7 +12,6 @@ use crate::configuration::load_config;
 use crate::models::{Config, Transaction};
 use crate::providers::*;
 
-use super::amex::amex_auth;
 pub trait Sender {
     fn send(&self, transactions: String) -> Result<()>;
 }
@@ -131,7 +130,6 @@ impl Consumer for InstantConsumer {
         println!("Waiting for messages. Press Ctrl-C to exit.");
         println!("Routing key: {}", routing_key);
         let mut start = Instant::now();
-        let mut output_transaction = String::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
         for message in consumer.receiver().into_iter() {
@@ -248,70 +246,7 @@ impl Consumer for TimedConsumer {
 
     }
 }
-/// A trait for formatting transaction data for each retailer.
-pub trait Formatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>>;
-}
 
-pub struct VisaAuthFormatter {}
-
-impl Formatter for VisaAuthFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
-        let mut formatted_transactions:Vec<String>= Vec::new();
-        formatted_transactions.push(visa_auth(&transactions[0])?);
-
-        Ok(formatted_transactions)
-    }
-}
-
-pub struct VisaSettlementFormatter {}
-
-impl Formatter for VisaSettlementFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
-        let mut formatted_transactions:Vec<String>= Vec::new();
-
-        for tx in transactions {
-             let transaction = visa_settlement(&tx)?;
-             formatted_transactions.push(transaction)
-        }
-
-        Ok(formatted_transactions)
-    }
-}
-
-pub struct AmexAuthFormatter {}
-
-impl Formatter for AmexAuthFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
-        let mut formatted_transactions:Vec<String>= Vec::new();
-        formatted_transactions.push(amex_auth(&transactions[0])?);
-
-        Ok(formatted_transactions)
-    }
-}
-pub struct WasabiFormatter {}
-
-impl Formatter for WasabiFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
-        let mut formatted_transactions:Vec<String>= Vec::new();
-
-        formatted_transactions.push(wasabi_transaction(transactions)?);
-
-        Ok(formatted_transactions)
-    }
-}
-
-pub struct IcelandFormatter {}
-
-impl Formatter for IcelandFormatter {
-    fn format(&self, transactions: Vec<Transaction>) -> Result<Vec<String>> {
-        let mut formatted_transactions:Vec<String>= Vec::new();
-
-        formatted_transactions.push(iceland_transaction(transactions)?);
-
-        Ok(formatted_transactions)
-    }
-}
 /// A generic function that can send messages via any Sender.
 pub fn send_message<C, F, S>(consumer: C, formatter: F, sender: S) -> Result<()>
 where
