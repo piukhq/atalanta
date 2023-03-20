@@ -1,8 +1,8 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::configuration::load_config;
 use crate::{models::Transaction, providers::to_pounds};
-use csv::Writer;
 use color_eyre::Result;
+use csv::Writer;
 use rand::Rng;
 use serde::Serialize;
 
@@ -26,13 +26,13 @@ pub struct WasabiTransaction {
 pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
     let config_data = load_config()?;
     let mut wtr = Writer::from_writer(vec![]);
-    
+
     for transaction in transactions {
         let wasabi_tx = WasabiTransaction {
             store_no: "A076".to_string(),
             entry_no: "16277".to_string(),
             transaction_no: "123456789".to_string(),
-            tender_type:"3".to_string(),
+            tender_type: "3".to_string(),
             amount: to_pounds(transaction.amount)?,
             card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
             card_type_name: config_data.payment_provider.clone(),
@@ -55,12 +55,11 @@ fn padded_random_int(raise_power: u32, num_chars: u32) -> Result<String> {
     let number = rand::thread_rng().gen_range(1..upper_value);
     let padded_value = format!("{:0num_chars$}", number, num_chars = num_chars as usize);
     Ok(padded_value)
-
 }
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
     use super::*;
+    use chrono::Utc;
 
     #[test]
     fn test_padded_random_int() {
@@ -73,7 +72,7 @@ mod tests {
         let dt = Utc::now();
 
         let test_transactions = vec![
-            Transaction{
+            Transaction {
                 amount: 260,
                 transaction_date: dt,
                 merchant_name: "Bink toffee".to_string(),
@@ -82,7 +81,7 @@ mod tests {
                 identifier: "1111111111".to_string(),
                 token: "a_token_001".to_string(),
             },
-            Transaction{
+            Transaction {
                 amount: 4267,
                 transaction_date: dt,
                 merchant_name: "Bink toffee".to_string(),

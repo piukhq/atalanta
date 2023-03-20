@@ -47,8 +47,8 @@ fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>>
     let file_path = "./files/hermes_tokens.csv";
     let file = File::open(file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
-    .has_headers(false)
-    .from_reader(file);
+        .has_headers(false)
+        .from_reader(file);
 
     for result in rdr.records() {
         let record = result?;
@@ -60,8 +60,11 @@ fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>>
     Ok(tokens)
 }
 
-
-fn transaction_producer(config_data: Config, settings: Settings, payment_card_tokens: Vec<StringRecord>) -> Result<u64> {
+fn transaction_producer(
+    config_data: Config,
+    settings: Settings,
+    payment_card_tokens: Vec<StringRecord>,
+) -> Result<u64> {
     //Manages the process of creating raw transactions
     let mut count: u64 = 0;
     let mut total_count: u64 = 0;
@@ -121,8 +124,10 @@ fn transaction_producer(config_data: Config, settings: Settings, payment_card_to
     Ok(count)
 }
 
-fn select_payment_details(payment_card_tokens: &Vec<StringRecord>, payment_provider: String)  -> Result<Vec<StringRecord>> {
-
+fn select_payment_details(
+    payment_card_tokens: &Vec<StringRecord>,
+    payment_provider: String,
+) -> Result<Vec<StringRecord>> {
     let mut provider_list = Vec::new();
     for item in payment_card_tokens {
         if item[2] == payment_provider {
@@ -131,10 +136,12 @@ fn select_payment_details(payment_card_tokens: &Vec<StringRecord>, payment_provi
     }
 
     Ok(provider_list)
-
 }
 
-fn create_transaction(config: &Config, payment_card_tokens: &Vec<StringRecord>) -> Result<Transaction> {
+fn create_transaction(
+    config: &Config,
+    payment_card_tokens: &Vec<StringRecord>,
+) -> Result<Transaction> {
     let token = payment_card_tokens.choose(&mut rand::thread_rng());
     return Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),

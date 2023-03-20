@@ -75,7 +75,10 @@ impl Sender for AmexSender {
             .post(amex_url)
             .header(
                 "Authorization",
-                format!("Token {}", authorize_json["api_key"].to_string().replace("\"", "")),
+                format!(
+                    "Token {}",
+                    authorize_json["api_key"].to_string().replace("\"", "")
+                ),
             )
             .body(transactions)
             .send()?;
@@ -200,7 +203,10 @@ impl Consumer for DelayConsumer {
         println!("Waiting for messages. Press Ctrl-C to exit.");
         println!("Routing key: {}", routing_key);
         let initial_number_transaction_on_queue = queue.declared_message_count().unwrap();
-        println!("{} queue has {} transactions", queue_name, initial_number_transaction_on_queue);
+        println!(
+            "{} queue has {} transactions",
+            queue_name, initial_number_transaction_on_queue
+        );
         let mut start = Instant::now();
         let mut transactions: Vec<Transaction> = Vec::new();
 
@@ -233,7 +239,7 @@ impl Consumer for DelayConsumer {
             }
         }
 
-        if ! transactions.is_empty() {
+        if !transactions.is_empty() {
             f(transactions.clone())?;
         }
 

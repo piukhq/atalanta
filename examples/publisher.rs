@@ -1,12 +1,12 @@
 use amiquip::{Connection, Exchange, Publish, Result};
-use tracing::{info, debug};
+use tracing::{debug, info};
 
 #[tracing::instrument(ret)]
 fn main() -> Result<()> {
     tracing_subscriber::fmt()
-    .with_max_level(tracing::Level::DEBUG)
-    .with_target(false)
-    .init();
+        .with_max_level(tracing::Level::DEBUG)
+        .with_target(false)
+        .init();
 
     debug!("Starting connection to rabbitmq");
     // Open connection.

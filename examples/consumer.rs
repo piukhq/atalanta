@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         match message {
             ConsumerMessage::Delivery(delivery) => {
                 let body: Transaction = rmp_serde::from_slice(&delivery.body).unwrap();
-                println!("(Received {},  {:?}",i, body);
+                println!("(Received {},  {:?}", i, body);
                 consumer.ack(delivery)?;
             }
             other => {

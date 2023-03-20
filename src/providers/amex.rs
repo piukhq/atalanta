@@ -59,7 +59,7 @@ mod tests {
     #[test]
     fn amex_auth_valid() {
         let dt = Utc::now();
-        let test_transaction =Transaction {
+        let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
             merchant_name: "test_merchant".to_string(),
@@ -79,18 +79,16 @@ mod tests {
             "cm_alias": "98765432123456789".to_string(),
             "merchant_number": "12345678".to_string(),
             "approval_code": "123456".to_string(),
-        }).to_string();
-    
-        assert_eq!(
-            json_result.unwrap(),
-            auth_tx_json
-        );
+        })
+        .to_string();
+
+        assert_eq!(json_result.unwrap(), auth_tx_json);
     }
 
     #[test]
     fn amex_settlement_valid() {
         let dt = Utc::now();
-        let test_transaction =Transaction {
+        let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
             merchant_name: "test_merchant".to_string(),
@@ -113,11 +111,9 @@ mod tests {
             "partnerId": "AADP0050",
             "recordId": "0224133845625011230183160001602891525AADP00400",
             "currencyCode": "840"
-        }).to_string();
-    
-        assert_eq!(
-            json_result.unwrap(),
-            settlement_tx_json
-        );
+        })
+        .to_string();
+
+        assert_eq!(json_result.unwrap(), settlement_tx_json);
     }
 }

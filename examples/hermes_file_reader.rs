@@ -1,8 +1,8 @@
+use color_eyre::Result;
 use csv;
 use std::env;
 use std::ffi::OsString;
 use std::fs::File;
-use color_eyre::Result;
 use std::time;
 
 fn run() -> Result<()> {
@@ -15,8 +15,8 @@ fn run() -> Result<()> {
     let file_path = get_first_arg()?;
     let file = File::open(file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
-    .has_headers(false)
-    .from_reader(file);
+        .has_headers(false)
+        .from_reader(file);
 
     let start = time::Instant::now();
     for result in rdr.records() {

@@ -1,7 +1,7 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::{models::Transaction, providers::to_pounds};
-use csv::WriterBuilder;
 use color_eyre::Result;
+use csv::WriterBuilder;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -36,14 +36,14 @@ pub struct IcelandTransaction {
 
 pub fn iceland_transaction(transactions: Vec<Transaction>) -> Result<String> {
     let mut wtr = WriterBuilder::new().from_writer(vec![]);
-    
+
     // TODO: card_scheme name and number, first six and last four.
     for transaction in transactions {
         let iceland_tx = IcelandTransaction {
             first_six: "123456".to_string(),
             last_four: "4444".to_string(),
             expiry: "01/80".to_string(),
-            card_scheme_id:"6".to_string(),
+            card_scheme_id: "6".to_string(),
             card_scheme_name: "Visa Debit".to_string(),
             identifier: transaction.identifier.clone(),
             transaction_date: transaction.transaction_date.to_string(),
@@ -63,15 +63,15 @@ pub fn iceland_transaction(transactions: Vec<Transaction>) -> Result<String> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
     use super::*;
+    use chrono::Utc;
 
     #[test]
     fn iceland_transaction_valid() {
         let dt = Utc::now();
 
         let test_transactions = vec![
-            Transaction{
+            Transaction {
                 amount: 260,
                 transaction_date: dt,
                 merchant_name: "Bink toffee".to_string(),
@@ -80,7 +80,7 @@ mod tests {
                 identifier: "1111111111".to_string(),
                 token: "a_token_001".to_string(),
             },
-            Transaction{
+            Transaction {
                 amount: 4267,
                 transaction_date: dt,
                 merchant_name: "Bink toffee".to_string(),

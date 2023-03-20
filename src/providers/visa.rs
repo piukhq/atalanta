@@ -151,7 +151,8 @@ mod tests {
                     "MessageName": "AuthMessageTest",
                     "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "AUTH"}],
                     "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4"
-            }).to_string()
+            })
+            .to_string()
         );
     }
 }

@@ -50,14 +50,13 @@ impl Formatter for Blob {
 fn main() {
     let mut s = String::from("");
     Output::generate(Blob, &mut s);
-    println!("{}",s);
+    println!("{}", s);
     assert!(s.contains("one 1"));
     assert!(s.contains("two 2"));
 
-
     s.clear(); // reuse the same buffer
     Output::generate(Api, &mut s);
-    println!("{}",s);
+    println!("{}", s);
     assert!(s.contains(r#"{"one":"1"}"#));
     assert!(s.contains(r#"{"two":"2"}"#));
 }
