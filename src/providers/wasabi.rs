@@ -1,5 +1,4 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
-use crate::configuration::load_config;
 use crate::{models::Transaction, providers::to_pounds};
 use color_eyre::Result;
 use csv::Writer;
@@ -24,7 +23,6 @@ pub struct WasabiTransaction {
 }
 
 pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
-    let config_data = load_config()?;
     let mut wtr = Writer::from_writer(vec![]);
 
     for transaction in transactions {
@@ -35,7 +33,7 @@ pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
             tender_type: "3".to_owned(),
             amount: to_pounds(transaction.amount),
             card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
-            card_type_name: config_data.payment_provider.clone(),
+            card_type_name: transaction.payment_provider.clone(),
             auth_code: transaction.auth_code.clone(),
             authorization_ok: "1".to_owned(),
             date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
@@ -75,6 +73,7 @@ mod tests {
             Transaction {
                 amount: 260,
                 transaction_date: dt,
+                payment_provider: "visa".to_owned(),
                 merchant_name: "Bink toffee".to_owned(),
                 transaction_id: "1234567890987654321234567".to_owned(),
                 auth_code: "098765".to_owned(),
@@ -86,6 +85,7 @@ mod tests {
             Transaction {
                 amount: 4267,
                 transaction_date: dt,
+                payment_provider: "visa".to_owned(),
                 merchant_name: "Bink toffee".to_owned(),
                 transaction_id: "12345678909887654".to_owned(),
                 auth_code: "023454".to_owned(),

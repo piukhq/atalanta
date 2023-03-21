@@ -107,6 +107,7 @@ mod tests {
         let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
+            payment_provider: "visa".to_owned(),
             merchant_name: "test_merchant".to_string(),
             transaction_id: "test_transaction_id_1".to_string(),
             auth_code: "123456".to_string(),

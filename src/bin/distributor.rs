@@ -14,7 +14,7 @@ fn main() -> Result<()> {
     let config_data: Config = load_config()?;
     let settings: Settings = load_settings()?;
 
-    println!("Distributing {} transactions.", config_data.merchant_slug);
+    println!("Distributing {} transactions.", config_data.provider_slug);
 
     routing(settings, config_data)?;
     // transaction_consumer()?;
@@ -26,7 +26,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
     let mut provider = String::with_capacity(25);
 
     if settings.environment == "LOCAL" {
-        provider = config_data.deployed_slug;
+        provider = config_data.provider_slug;
     } else {
         println!("Live configuration and settings missing")
     }

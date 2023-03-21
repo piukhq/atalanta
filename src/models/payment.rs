@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct Transaction {
     pub amount: i16,
     pub transaction_date: DateTime<Utc>,
+    pub payment_provider: String,
     pub merchant_name: String,
     pub transaction_id: String,
     pub auth_code: String,

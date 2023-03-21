@@ -29,7 +29,7 @@ impl Consumer for InstantConsumer {
     {
         let config_data: Config = load_config()?;
         let routing_key = &config_data.routing_key;
-        let queue_name = format!("perf-{}", config_data.deployed_slug);
+        let queue_name = format!("atalanta-{}", config_data.provider_slug);
 
         let mut count: u64 = 0;
 
@@ -93,7 +93,7 @@ impl Consumer for DelayConsumer {
     {
         let config_data: Config = load_config()?;
         let routing_key = config_data.routing_key;
-        let queue_name = format!("perf-{}", config_data.deployed_slug);
+        let queue_name = format!("atalanta-{}", config_data.provider_slug);
 
         let exchange = self.channel.exchange_declare(
             ExchangeType::Topic,

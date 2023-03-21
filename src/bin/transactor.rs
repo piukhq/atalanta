@@ -26,7 +26,7 @@ fn main() -> Result<()> {
 
     println!("Configuration: '{:?}'", config_data);
 
-    let payment_card_tokens = load_payment_card_tokens(&config_data.merchant_slug)?;
+    let payment_card_tokens = load_payment_card_tokens(&config_data.provider_slug)?;
 
     let start = time::Instant::now();
     let transaction_count: u64 = transaction_producer(config_data, settings, payment_card_tokens)?;
@@ -99,9 +99,10 @@ fn transaction_producer(
         // Select a payment provider based on weighted selection,
         // visa provides many more transactions than mastercard or amex
         let payment_provider = select_payment_provider(&config_data.percentage)?;
-        let payment_key = format!("perf-{}", payment_provider);
-        let merchant_key = format!("perf-{}", config_data.merchant_slug);
-        let routing_key = format!("transactions.{}.{}", payment_key, merchant_key);
+        let routing_key = format!(
+            "transactions.{}.{}",
+            payment_provider, config_data.provider_slug
+        );
         println!("routing_key: {}", routing_key);
 
         //Select a token to use for this payment provider, along with first six and last four
@@ -148,7 +149,8 @@ fn create_transaction(
     Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
-        merchant_name: config.merchant_slug.clone(),
+        payment_provider: "visa".to_owned(),
+        merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
         identifier: "12345678".to_string(),

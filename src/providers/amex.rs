@@ -62,6 +62,7 @@ mod tests {
         let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
+            payment_provider: "visa".to_owned(),
             merchant_name: "test_merchant".to_owned(),
             transaction_id: "test_transaction_id_1".to_owned(),
             auth_code: "123456".to_owned(),
@@ -93,6 +94,7 @@ mod tests {
         let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
+            payment_provider: "visa".to_owned(),
             merchant_name: "test_merchant".to_owned(),
             transaction_id: "test_transaction_id_1".to_owned(),
             auth_code: "123456".to_owned(),

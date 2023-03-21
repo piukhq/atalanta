@@ -1,8 +1,6 @@
 #[derive(serde::Deserialize, Debug)]
 pub struct Config {
-    pub merchant_slug: String,
-    pub payment_provider: String,
-    pub deployed_slug: String,
+    pub provider_slug: String,
     pub routing_key: String,
     pub batch_size: usize,
     pub amount_min: i16,

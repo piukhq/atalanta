@@ -74,6 +74,7 @@ mod tests {
             Transaction {
                 amount: 260,
                 transaction_date: dt,
+                payment_provider: "visa".to_owned(),
                 merchant_name: "Bink toffee".to_string(),
                 transaction_id: "1234567890987654321234567".to_string(),
                 auth_code: "098765".to_string(),
@@ -85,6 +86,7 @@ mod tests {
             Transaction {
                 amount: 4267,
                 transaction_date: dt,
+                payment_provider: "visa".to_owned(),
                 merchant_name: "Bink toffee".to_string(),
                 transaction_id: "12345678909887654".to_string(),
                 auth_code: "023454".to_string(),

@@ -4,16 +4,14 @@ use std::fs;
 use toml;
 
 pub fn load_config() -> Result<Config> {
-    let filename = "wasabi-club.toml";
-
+    let filename = "config.toml";
     let contents = fs::read_to_string(filename)?;
+    let config: Config = toml::from_str(&contents)?;
 
-    let conf: Config = toml::from_str(&contents)?;
+    println!("Loading config, provider slug: {}", config.provider_slug);
+    println!("Transaction rate: {}", config.transactions_per_second);
 
-    println!("Loading config, merchant slug:'{}'", conf.merchant_slug);
-    println!("Transaction rate: {}", conf.transactions_per_second);
-
-    Ok(conf)
+    Ok(config)
 }
 
 pub fn load_settings() -> Result<Settings> {
