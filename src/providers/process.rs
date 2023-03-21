@@ -59,7 +59,7 @@ impl Consumer for InstantConsumer {
                     if count == 0 {
                         start = Instant::now();
                     }
-                    let tx: Transaction = rmp_serde::from_slice(&delivery.body).unwrap();
+                    let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
                     f(vec![tx])?;
                     consumer.ack(delivery)?;
                     count += 1;
@@ -95,8 +95,6 @@ impl Consumer for DelayConsumer {
         let routing_key = config_data.routing_key;
         let queue_name = format!("perf-{}", config_data.deployed_slug);
 
-        let mut count: u32 = 0;
-
         let exchange = self.channel.exchange_declare(
             ExchangeType::Topic,
             "transactions",
@@ -114,33 +112,19 @@ impl Consumer for DelayConsumer {
 
         println!("Waiting for messages. Press Ctrl-C to exit.");
         println!("Routing key: {}", routing_key);
-        let initial_number_transaction_on_queue = queue.declared_message_count().unwrap();
-        println!(
-            "{} queue has {} transactions",
-            queue_name, initial_number_transaction_on_queue
-        );
-        let mut start = Instant::now();
         let mut transactions: Vec<Transaction> = Vec::new();
 
         let consumer = queue.consume(ConsumerOptions::default())?;
-
-        let no = consumer.receiver().len();
 
         for message in consumer.receiver().iter() {
             println!("Consuming messages");
             match message {
                 ConsumerMessage::Delivery(delivery) => {
-                    if count == 0 {
-                        start = Instant::now();
-                    }
-                    count += 1;
-                    transactions.push(rmp_serde::from_slice(&delivery.body).unwrap());
+                    transactions.push(rmp_serde::from_slice(&delivery.body)?);
                     consumer.ack(delivery)?;
 
-                    if count == config_data.batch_size {
+                    if transactions.len() == config_data.batch_size {
                         f(transactions.clone())?;
-
-                        count = 0;
                         transactions.clear();
                     }
                 }

@@ -6,15 +6,16 @@ use color_eyre::Result;
 use serde_json::json;
 
 pub fn visa_auth(transaction: &Transaction) -> Result<String> {
+    let amount = to_pounds(transaction.amount);
     let auth = json!({
         "CardId": transaction.transaction_id[0..9],
         "ExternalUserId": transaction.token,
         "MessageElementsCollection": [
-            {"Key": "Transaction.BillingAmount", "Value": to_pounds(transaction.amount)?},
+            {"Key": "Transaction.BillingAmount", "Value": amount},
             {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
             {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
             {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
-            {"Key": "Transaction.TransactionAmount", "Value": to_pounds(transaction.amount)?},
+            {"Key": "Transaction.TransactionAmount", "Value": amount},
             {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
             {"Key": "Transaction.VisaMerchantName", "Value": "Bink Shop"},
             {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
@@ -28,7 +29,7 @@ pub fn visa_auth(transaction: &Transaction) -> Result<String> {
             {"Key": "Transaction.SettlementUSDAmount", "Value": 0},
             {"Key": "Transaction.CurrencyCodeNumeric", "Value": "840"},
             {"Key": "Transaction.BillingCurrencyCode", "Value": "840"},
-            {"Key": "Transaction.USDAmount", "Value": to_pounds(transaction.amount)?},
+            {"Key": "Transaction.USDAmount", "Value": amount},
             {"Key": "Transaction.MerchantLocalPurchaseDate ", "Value": "2019-12-19"},
             {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
             {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
@@ -46,31 +47,31 @@ pub fn visa_auth(transaction: &Transaction) -> Result<String> {
 }
 
 pub fn visa_settlement(transaction: &Transaction) -> Result<String> {
-    println!("{}", transaction.merchant_name);
+    let amount = to_pounds(transaction.amount);
     let settlement = json!(
         {
             "CardId": transaction.transaction_id[0..9],
             "ExternalUserId": transaction.token,
             "MessageElementsCollection": [
-                {"Key": "Transaction.BillingAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.BillingAmount", "Value": amount},
                 {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
                 {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
                 {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
-                {"Key": "Transaction.TransactionAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.TransactionAmount", "Value": amount},
                 {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
                 {"Key": "Transaction.VisaMerchantName", "Value": "Bink Shop"},
                 {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
                 {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
                 {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
                 {"Key": "Transaction.SettlementDate", "Value": Utc::now()},
-                {"Key": "Transaction.SettlementAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.SettlementAmount", "Value": amount},
                 {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 826},
-                {"Key": "Transaction.SettlementBillingAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.SettlementBillingAmount", "Value": amount},
                 {"Key": "Transaction.SettlementBillingCurrency", "Value": "GBP"},
-                {"Key": "Transaction.SettlementUSDAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.SettlementUSDAmount", "Value": amount},
                 {"Key": "Transaction.CurrencyCodeNumeric", "Value": "840"},
                 {"Key": "Transaction.BillingCurrencyCode", "Value": "840"},
-                {"Key": "Transaction.USDAmount", "Value": to_pounds(transaction.amount)?},
+                {"Key": "Transaction.USDAmount", "Value": amount},
                 {"Key": "Transaction.MerchantLocalPurchaseDate", "Value": "2019-12-19"},
                 {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
                 {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
@@ -96,8 +97,7 @@ mod tests {
 
     #[test]
     fn to_pounds_success() {
-        let pounds = to_pounds(235).unwrap();
-        println!("Pounds = {}", pounds);
+        let pounds = to_pounds(235);
         assert_eq!("2.35", pounds);
     }
 

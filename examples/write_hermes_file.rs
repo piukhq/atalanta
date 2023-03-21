@@ -1,5 +1,4 @@
 use color_eyre::Result;
-use csv;
 use rand::Rng;
 
 /// Inserts data into writer and writes to a file

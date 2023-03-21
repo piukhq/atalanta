@@ -1,6 +1,5 @@
 use chrono::{DateTime, FixedOffset};
 use color_eyre::Result;
-use csv;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]

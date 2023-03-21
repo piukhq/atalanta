@@ -33,7 +33,7 @@ pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
             entry_no: "16277".to_owned(),
             transaction_no: "123456789".to_owned(),
             tender_type: "3".to_owned(),
-            amount: to_pounds(transaction.amount)?,
+            amount: to_pounds(transaction.amount),
             card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
             card_type_name: config_data.payment_provider.clone(),
             auth_code: transaction.auth_code.clone(),

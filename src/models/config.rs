@@ -4,7 +4,7 @@ pub struct Config {
     pub payment_provider: String,
     pub deployed_slug: String,
     pub routing_key: String,
-    pub batch_size: u32,
+    pub batch_size: usize,
     pub amount_min: i16,
     pub amount_max: i16,
     pub transactions_per_second: u64,

@@ -2,7 +2,7 @@
 
 use amiquip::{Connection, Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
 use chrono::Utc;
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 use csv::StringRecord;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
@@ -142,22 +142,24 @@ fn create_transaction(
     config: &Config,
     payment_card_tokens: &Vec<StringRecord>,
 ) -> Result<Transaction> {
-    let token = payment_card_tokens.choose(&mut rand::thread_rng());
-    return Ok(Transaction {
+    let token = payment_card_tokens
+        .choose(&mut rand::thread_rng())
+        .ok_or(eyre!("failed to select payment card token"))?;
+    Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
         merchant_name: config.merchant_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
         identifier: "12345678".to_string(),
-        token: token.unwrap()[0].to_string(),
-        first_six: token.unwrap()[3].to_string(),
-        last_four: token.unwrap()[4].to_string(),
-    });
+        token: token[0].to_string(),
+        first_six: token[3].to_string(),
+        last_four: token[4].to_string(),
+    })
 }
 
 fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
-    let dist = WeightedIndex::new(percentages.iter().map(|item| item.1)).unwrap();
+    let dist = WeightedIndex::new(percentages.iter().map(|item| item.1))?;
     let mut rng = thread_rng();
     let provider = &percentages[dist.sample(&mut rng)].0;
 
@@ -188,10 +190,7 @@ fn queue_transaction(
     routing_key: &String,
 ) -> Result<()> {
     // Publish a message to the "new_transaction" queue.
-    exchange.publish(Publish::new(
-        &rmp_serde::to_vec(&transaction).unwrap(),
-        routing_key,
-    ))?;
+    exchange.publish(Publish::new(&rmp_serde::to_vec(&transaction)?, routing_key))?;
 
     Ok(())
 }
@@ -203,7 +202,6 @@ mod tests {
     #[test]
     fn create_auth_code_success() {
         let auth_code = create_auth_code().unwrap();
-        println!("Random number = {}", auth_code);
-        assert_eq!(6, auth_code.chars().count());
+        assert_eq!(auth_code.len(), 6);
     }
 }

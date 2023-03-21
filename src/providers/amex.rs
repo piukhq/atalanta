@@ -13,7 +13,7 @@ pub fn amex_auth(transaction: &Transaction) -> Result<String> {
         "transaction_id": transaction.transaction_id,
         "offer_id": transaction.transaction_id,
         "transaction_time": mst_datetime.to_string(),
-        "transaction_amount": to_pounds(transaction.amount)?,
+        "transaction_amount": to_pounds(transaction.amount),
         "cm_alias": transaction.token,
         "merchant_number": transaction.identifier,
         "approval_code": transaction.auth_code,
@@ -30,7 +30,7 @@ pub fn amex_settlement(transaction: &Transaction) -> Result<String> {
             "transactionId": transaction.transaction_id,
             "offerId": transaction.transaction_id,
             "transactionDate": transaction.transaction_date.to_string(),
-            "transactionAmount": to_pounds(transaction.amount)?,
+            "transactionAmount": to_pounds(transaction.amount),
             "cardToken": transaction.token,
             "merchantNumber": transaction.identifier,
             "approvalCode": transaction.auth_code,
@@ -52,9 +52,8 @@ mod tests {
 
     #[test]
     fn to_pounds_success() {
-        let pounds = to_pounds(235).unwrap();
-        println!("Pounds = {}", pounds);
-        assert_eq!("2.35", pounds);
+        let pounds = to_pounds(235);
+        assert_eq!(pounds, "2.35");
     }
 
     #[test]

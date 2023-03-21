@@ -47,7 +47,7 @@ pub fn iceland_transaction(transactions: Vec<Transaction>) -> Result<String> {
             card_scheme_name: "Visa Debit".to_string(),
             identifier: transaction.identifier.clone(),
             transaction_date: transaction.transaction_date.to_string(),
-            amount: to_pounds(transaction.amount)?,
+            amount: to_pounds(transaction.amount),
             amount_unit: "GBP".to_string(),
             cashback_value: ".00".to_string(),
             cashback_unit: "GBP".to_string(),

@@ -22,18 +22,16 @@ impl Output {
 struct Api;
 impl Formatter for Api {
     fn format(&self, data: &Data, buf: &mut String) {
-        for (k, v) in data {
-            buf.push('[');
-            for (k, v) in data.into_iter() {
-                let entry = format!(r#"{{"{}":"{}"}}"#, k, v);
-                buf.push_str(&entry);
-                buf.push(',');
-            }
-            if !data.is_empty() {
-                buf.pop(); // remove extra , at the end
-            }
-            buf.push(']');
+        buf.push('[');
+        for (k, v) in data.iter() {
+            let entry = format!(r#"{{"{}":"{}"}}"#, k, v);
+            buf.push_str(&entry);
+            buf.push(',');
         }
+        if !data.is_empty() {
+            buf.pop(); // remove extra , at the end
+        }
+        buf.push(']');
     }
 }
 

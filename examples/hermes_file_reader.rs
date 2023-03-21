@@ -1,5 +1,4 @@
 use color_eyre::Result;
-use csv;
 use std::env;
 use std::ffi::OsString;
 use std::fs::File;
@@ -21,13 +20,13 @@ fn run() -> Result<()> {
     let start = time::Instant::now();
     for result in rdr.records() {
         let record = result?;
-        if record.iter().any(|field| field == &query) {
+        if record.iter().any(|field| field == query) {
             tokens.push(record);
         }
     }
     let duration = start.elapsed();
     println!("duration = {:?}", duration);
-    println!("Number = {}", tokens.len().to_string());
+    println!("Number = {}", tokens.len());
 
     Ok(())
 }

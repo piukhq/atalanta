@@ -1,4 +1,3 @@
-use color_eyre::Result;
 use rust_decimal::prelude::*;
 
 mod amex;
@@ -15,6 +14,6 @@ pub use process::*;
 pub use visa::{visa_auth, visa_settlement};
 pub use wasabi::wasabi_transaction;
 
-pub fn to_pounds(amount: i16) -> Result<String> {
-    Ok(Decimal::new(amount.into(), 2).to_string())
+pub fn to_pounds(amount: i16) -> String {
+    Decimal::new(amount.into(), 2).to_string()
 }

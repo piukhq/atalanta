@@ -1,4 +1,4 @@
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::Result;
 use serde_json::json;
 
 pub trait Sender {
