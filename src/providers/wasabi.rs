@@ -29,19 +29,19 @@ pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
 
     for transaction in transactions {
         let wasabi_tx = WasabiTransaction {
-            store_no: "A076".to_string(),
-            entry_no: "16277".to_string(),
-            transaction_no: "123456789".to_string(),
-            tender_type: "3".to_string(),
+            store_no: "A076".to_owned(),
+            entry_no: "16277".to_owned(),
+            transaction_no: "123456789".to_owned(),
+            tender_type: "3".to_owned(),
             amount: to_pounds(transaction.amount)?,
             card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
             card_type_name: config_data.payment_provider.clone(),
             auth_code: transaction.auth_code.clone(),
-            authorization_ok: "1".to_string(),
+            authorization_ok: "1".to_owned(),
             date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
             time: transaction.transaction_date.format("%H-%M-%S").to_string(),
             eft_merchant_no: transaction.identifier.clone(),
-            receipt_no: padded_random_int(12, 13).unwrap(),
+            receipt_no: padded_random_int(12, 13),
         };
 
         wtr.serialize(wasabi_tx)?;
@@ -50,12 +50,12 @@ pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
     Ok(data)
 }
 
-fn padded_random_int(raise_power: u32, num_chars: u32) -> Result<String> {
+fn padded_random_int(raise_power: u32, num_chars: u32) -> String {
     let upper_value = 10_u64.pow(raise_power);
     let number = rand::thread_rng().gen_range(1..upper_value);
-    let padded_value = format!("{:0num_chars$}", number, num_chars = num_chars as usize);
-    Ok(padded_value)
+    format!("{:0num_chars$}", number, num_chars = num_chars as usize)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn test_padded_random_int() {
-        let value = padded_random_int(12, 13).unwrap();
+        let value = padded_random_int(12, 13);
         assert_eq!(value.len(), 13);
     }
 
@@ -75,20 +75,24 @@ mod tests {
             Transaction {
                 amount: 260,
                 transaction_date: dt,
-                merchant_name: "Bink toffee".to_string(),
-                transaction_id: "1234567890987654321234567".to_string(),
-                auth_code: "098765".to_string(),
-                identifier: "1111111111".to_string(),
-                token: "a_token_001".to_string(),
+                merchant_name: "Bink toffee".to_owned(),
+                transaction_id: "1234567890987654321234567".to_owned(),
+                auth_code: "098765".to_owned(),
+                identifier: "1111111111".to_owned(),
+                token: "a_token_001".to_owned(),
+                first_six: "123456".to_owned(),
+                last_four: "7890".to_owned(),
             },
             Transaction {
                 amount: 4267,
                 transaction_date: dt,
-                merchant_name: "Bink toffee".to_string(),
-                transaction_id: "12345678909887654".to_string(),
-                auth_code: "023454".to_string(),
-                identifier: "1111111112".to_string(),
-                token: "a_token_002".to_string(),
+                merchant_name: "Bink toffee".to_owned(),
+                transaction_id: "12345678909887654".to_owned(),
+                auth_code: "023454".to_owned(),
+                identifier: "1111111112".to_owned(),
+                token: "a_token_002".to_owned(),
+                first_six: "123456".to_owned(),
+                last_four: "7890".to_owned(),
             },
         ];
 

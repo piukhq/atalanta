@@ -3,4 +3,5 @@ pub mod configuration;
 pub mod initialise;
 pub mod models;
 pub mod providers;
+pub mod senders;
 pub mod services;

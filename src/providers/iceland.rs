@@ -79,6 +79,8 @@ mod tests {
                 auth_code: "098765".to_string(),
                 identifier: "1111111111".to_string(),
                 token: "a_token_001".to_string(),
+                first_six: "123456".to_owned(),
+                last_four: "7890".to_owned(),
             },
             Transaction {
                 amount: 4267,
@@ -88,6 +90,8 @@ mod tests {
                 auth_code: "023454".to_string(),
                 identifier: "1111111112".to_string(),
                 token: "a_token_002".to_string(),
+                first_six: "123456".to_owned(),
+                last_four: "7890".to_owned(),
             },
         ];
 

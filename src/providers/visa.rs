@@ -112,6 +112,8 @@ mod tests {
             auth_code: "123456".to_string(),
             identifier: "12345678".to_string(),
             token: "98765432123456789".to_string(),
+            first_six: "123456".to_owned(),
+            last_four: "7890".to_owned(),
         };
 
         let json_result = visa_auth(&test_transaction);

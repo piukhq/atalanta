@@ -2,11 +2,12 @@
 
 use crate::{models::Transaction, providers::to_pounds};
 use chrono::FixedOffset;
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 use serde_json::json;
 
 pub fn amex_auth(transaction: &Transaction) -> Result<String> {
-    let mst_timezone = FixedOffset::west_opt(7 * 60 * 60).unwrap();
+    let mst_timezone =
+        FixedOffset::west_opt(7 * 60 * 60).ok_or(eyre!("Failed to construct MST timezone"))?;
     let mst_datetime = transaction.transaction_date.with_timezone(&mst_timezone);
     let auth = json!({
         "transaction_id": transaction.transaction_id,
@@ -62,23 +63,25 @@ mod tests {
         let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
-            merchant_name: "test_merchant".to_string(),
-            transaction_id: "test_transaction_id_1".to_string(),
-            auth_code: "123456".to_string(),
-            identifier: "12345678".to_string(),
-            token: "98765432123456789".to_string(),
+            merchant_name: "test_merchant".to_owned(),
+            transaction_id: "test_transaction_id_1".to_owned(),
+            auth_code: "123456".to_owned(),
+            identifier: "12345678".to_owned(),
+            token: "98765432123456789".to_owned(),
+            first_six: "123456".to_owned(),
+            last_four: "7890".to_owned(),
         };
 
         let json_result = amex_auth(&test_transaction);
         let mst_timezone = FixedOffset::west_opt(7 * 60 * 60).unwrap();
         let auth_tx_json = json!({
-            "transaction_id": "test_transaction_id_1".to_string(),
-            "offer_id": "test_transaction_id_1".to_string(),
-            "transaction_time": dt.with_timezone(&mst_timezone).to_string(),
+            "transaction_id": "test_transaction_id_1".to_owned(),
+            "offer_id": "test_transaction_id_1".to_owned(),
+            "transaction_time": dt.with_timezone(&mst_timezone).to_owned(),
             "transaction_amount": "2.45",
-            "cm_alias": "98765432123456789".to_string(),
-            "merchant_number": "12345678".to_string(),
-            "approval_code": "123456".to_string(),
+            "cm_alias": "98765432123456789".to_owned(),
+            "merchant_number": "12345678".to_owned(),
+            "approval_code": "123456".to_owned(),
         })
         .to_string();
 
@@ -91,22 +94,24 @@ mod tests {
         let test_transaction = Transaction {
             amount: 245,
             transaction_date: dt,
-            merchant_name: "test_merchant".to_string(),
-            transaction_id: "test_transaction_id_1".to_string(),
-            auth_code: "123456".to_string(),
-            identifier: "12345678".to_string(),
-            token: "98765432123456789".to_string(),
+            merchant_name: "test_merchant".to_owned(),
+            transaction_id: "test_transaction_id_1".to_owned(),
+            auth_code: "123456".to_owned(),
+            identifier: "12345678".to_owned(),
+            token: "98765432123456789".to_owned(),
+            first_six: "123456".to_owned(),
+            last_four: "7890".to_owned(),
         };
 
         let json_result = amex_settlement(&test_transaction);
         let settlement_tx_json = json!({
-            "transactionId": "test_transaction_id_1".to_string(),
-            "offerId": "test_transaction_id_1".to_string(),
-            "transactionDate": dt.to_string(),
+            "transactionId": "test_transaction_id_1".to_owned(),
+            "offerId": "test_transaction_id_1".to_owned(),
+            "transactionDate": dt.to_owned(),
             "transactionAmount": "2.45",
-            "cardToken": "98765432123456789".to_string(),
-            "merchantNumber": "12345678".to_string(),
-            "approvalCode": "123456".to_string(),
+            "cardToken": "98765432123456789".to_owned(),
+            "merchantNumber": "12345678".to_owned(),
+            "approvalCode": "123456".to_owned(),
             "dpan": "firstsixXXXXXlastfour",
             "partnerId": "AADP0050",
             "recordId": "0224133845625011230183160001602891525AADP00400",
