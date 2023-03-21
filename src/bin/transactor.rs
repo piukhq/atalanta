@@ -153,7 +153,7 @@ fn create_transaction(
         merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
-        identifier: "12345678".to_string(),
+        identifier: "12345678".to_owned(),
         token: token[0].to_string(),
         first_six: token[3].to_string(),
         last_four: token[4].to_string(),
@@ -163,14 +163,13 @@ fn create_transaction(
 fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
     let dist = WeightedIndex::new(percentages.iter().map(|item| item.1))?;
     let mut rng = thread_rng();
-    let provider = &percentages[dist.sample(&mut rng)].0;
-
-    Ok(provider.to_string())
+    let provider = percentages[dist.sample(&mut rng)].0.clone();
+    Ok(provider)
 }
 
 fn create_auth_code() -> Result<String> {
     let number = rand::thread_rng().gen_range(9..1000000);
-    return Ok(format!("{:0>6}", number.to_string()));
+    return Ok(format!("{:0>6}", number));
 }
 
 fn connect_to_local_queue() -> Result<Connection> {

@@ -45,7 +45,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             };
             let formatter = WasabiFormatter {};
             let sender = SFTPSender {
-                host: "sftp://wasabi.com".to_string(),
+                host: "sftp://wasabi.com".to_owned(),
                 port: 22,
             };
 
@@ -58,7 +58,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             };
             let formatter = IcelandFormatter {};
             let sender = SFTPSender {
-                host: "sftp://wasabi.com".to_string(),
+                host: "sftp://wasabi.com".to_owned(),
                 port: 22,
             };
 
@@ -68,7 +68,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             let consumer = InstantConsumer { channel };
             let formatter = VisaAuthFormatter {};
             let sender = APISender {
-                url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
+                url: "http://192.168.50.70:9090/auth_transactions/visa".to_owned(),
             };
 
             send_message(consumer, formatter, sender)?;
@@ -80,7 +80,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             };
             let formatter = VisaSettlementFormatter {};
             let sender = APISender {
-                url: "http://192.168.50.70:9090/auth_transactions/visa".to_string(),
+                url: "http://192.168.50.70:9090/auth_transactions/visa".to_owned(),
             };
 
             send_message(consumer, formatter, sender)?;
@@ -89,7 +89,7 @@ fn routing(settings: Settings, config_data: Config) -> Result<()> {
             let consumer = InstantConsumer { channel };
             let formatter = AmexAuthFormatter {};
             let sender = AmexSender {
-                url: "http://192.168.50.70:9090/auth_transactions".to_string(),
+                url: "http://192.168.50.70:9090/auth_transactions".to_owned(),
             };
 
             send_message(consumer, formatter, sender)?;

@@ -98,7 +98,7 @@ fn main() -> Result<()> {
             // TODO: use ScheduleConsumer { schedule: "*/15 * * * * *" }
             let consumer = InstantConsumer;
             let sender = SFTPSender {
-                host: "sftp://wasabi.com".to_string(),
+                host: "sftp://wasabi.com".to_owned(),
                 port: 22,
             };
 
@@ -109,7 +109,7 @@ fn main() -> Result<()> {
                 delay: Duration::from_secs(3),
             };
             let sender = BlobSender {
-                container: "harmonia-transactions".to_string(),
+                container: "harmonia-transactions".to_owned(),
             };
 
             send_message(consumer, sender);
@@ -117,7 +117,7 @@ fn main() -> Result<()> {
         "visa" => {
             let consumer = InstantConsumer;
             let sender = APISender {
-                url: "http://zephyrus.local/api".to_string(),
+                url: "http://zephyrus.local/api".to_owned(),
             };
 
             send_message(consumer, sender);

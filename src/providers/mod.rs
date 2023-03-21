@@ -15,5 +15,5 @@ pub use visa::{visa_auth, visa_settlement};
 pub use wasabi::wasabi_transaction;
 
 pub fn to_pounds(amount: i16) -> String {
-    Decimal::new(amount.into(), 2).to_string()
+    Decimal::new(amount as i64, 2).to_string()
 }

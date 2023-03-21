@@ -4,12 +4,12 @@ use color_eyre::Result;
 
 #[tokio::main]
 async fn send_to_blob_storage(data: String) -> Result<()> {
-    let account: String = "binkuksouthdev".to_string();
+    let account: String = "binkuksouthdev".to_owned();
     let access_key =
         "L/xU6NZswZAJbFhKjIGr0feakhY8QsCw4oUuj6bXNfxhWQv2caNkDo8czIu05DBcaZbSL7vfpYGP7OZsbpXuhw=="
-            .to_string();
-    let container: String = "harmonia-imports-test".to_string();
-    let blob_name: String = "wasabi".to_string();
+            .to_owned();
+    let container: String = "harmonia-imports-test".to_owned();
+    let blob_name: String = "wasabi".to_owned();
 
     let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
     let blob_client =

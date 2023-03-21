@@ -12,8 +12,8 @@ impl Output {
     fn generate<T: Formatter>(g: T, s: &mut String) {
         // backend operations...
         let mut data = HashMap::new();
-        data.insert("one".to_string(), 1);
-        data.insert("two".to_string(), 2);
+        data.insert("one".to_owned(), 1);
+        data.insert("two".to_owned(), 2);
         // generate report
         g.format(&data, s);
     }

@@ -14,24 +14,24 @@ struct Transaction {
 fn create_transactions() -> Result<Vec<Transaction>> {
     let toffee_transaction = vec![
         Transaction {
-            amount: "2.60".to_string(),
+            amount: "2.60".to_owned(),
             transaction_date: DateTime::parse_from_str(
                 "2014-11-28 21:00:09 +00:00",
                 "%Y-%m-%d %H:%M:%S %:z",
             )?,
-            merchant_name: "Bink toffee".to_string(),
-            transaction_id: "1234567890987654321234567".to_string(),
-            auth_code: "098765".to_string(),
+            merchant_name: "Bink toffee".to_owned(),
+            transaction_id: "1234567890987654321234567".to_owned(),
+            auth_code: "098765".to_owned(),
         },
         Transaction {
-            amount: "42.67".to_string(),
+            amount: "42.67".to_owned(),
             transaction_date: DateTime::parse_from_str(
                 "2014-11-20 21:00:09 +00:00",
                 "%Y-%m-%d %H:%M:%S %:z",
             )?,
-            merchant_name: "Bink toffee".to_string(),
-            transaction_id: "12345678909887654".to_string(),
-            auth_code: "023454".to_string(),
+            merchant_name: "Bink toffee".to_owned(),
+            transaction_id: "12345678909887654".to_owned(),
+            auth_code: "023454".to_owned(),
         },
     ];
 
