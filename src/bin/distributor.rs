@@ -1,101 +1,88 @@
 use amiquip::Connection;
 use atalanta::senders::{APISender, AmexSender, SFTPSender};
-use color_eyre::Result;
-use std::time::Duration;
+use chrono::Duration;
+use color_eyre::{eyre::eyre, Result};
 
-use atalanta::configuration::{load_config, load_settings};
+use atalanta::configuration::{load_distributor_config, load_settings};
 use atalanta::initialise::startup;
-use atalanta::models::{Config, Settings};
+use atalanta::models::DistributorConfig;
 use atalanta::providers::*;
+use tracing::info;
 
 fn main() -> Result<()> {
     startup()?;
 
-    let config_data: Config = load_config()?;
-    let settings: Settings = load_settings()?;
+    let settings = load_settings()?;
+    let config = load_distributor_config(&settings)?;
 
-    println!("Distributing {} transactions.", config_data.provider_slug);
+    info!(config.provider_slug, "distributing transactions");
 
-    routing(settings, config_data)?;
-    // transaction_consumer()?;
+    start_distributor(config)?;
 
     Ok(())
 }
 
-fn routing(settings: Settings, config_data: Config) -> Result<()> {
-    let mut provider = String::with_capacity(25);
-
-    if settings.environment == "LOCAL" {
-        provider = config_data.provider_slug;
-    } else {
-        println!("Live configuration and settings missing")
-    }
-
+fn start_distributor(config: DistributorConfig) -> Result<()> {
     // Create rabbitmq connection and channel
     // Open connection.
     let mut connection = Connection::insecure_open("amqp://localhost:5672")?;
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
 
-    match provider.as_str() {
+    match config.provider_slug.as_str() {
         "wasabi-club" => {
-            let consumer = DelayConsumer {
-                channel,
-                delay: Duration::from_secs(10),
-            };
+            let consumer = OneShotConsumer { channel };
             let formatter = WasabiFormatter {};
             let sender = SFTPSender {
                 host: "sftp://wasabi.com".to_owned(),
                 port: 22,
             };
 
-            send_message(consumer, formatter, sender)?;
+            start_consuming(consumer, formatter, sender)?;
         }
         "iceland-bonus-card" => {
-            let consumer = DelayConsumer {
-                channel,
-                delay: Duration::from_secs(10),
-            };
+            let consumer = OneShotConsumer { channel };
             let formatter = IcelandFormatter {};
             let sender = SFTPSender {
                 host: "sftp://wasabi.com".to_owned(),
                 port: 22,
             };
 
-            send_message(consumer, formatter, sender)?;
+            start_consuming(consumer, formatter, sender)?;
         }
         "visa-auth" => {
-            let consumer = InstantConsumer { channel };
+            let consumer = InstantConsumer { config, channel };
             let formatter = VisaAuthFormatter {};
             let sender = APISender {
                 url: "http://192.168.50.70:9090/auth_transactions/visa".to_owned(),
             };
 
-            send_message(consumer, formatter, sender)?;
+            start_consuming(consumer, formatter, sender)?;
         }
         "visa-settlement" => {
             let consumer = DelayConsumer {
+                config,
                 channel,
-                delay: Duration::from_secs(10),
+                delay: Duration::seconds(10),
             };
             let formatter = VisaSettlementFormatter {};
             let sender = APISender {
                 url: "http://192.168.50.70:9090/auth_transactions/visa".to_owned(),
             };
 
-            send_message(consumer, formatter, sender)?;
+            start_consuming(consumer, formatter, sender)?;
         }
         "amex-auth" => {
-            let consumer = InstantConsumer { channel };
+            let consumer = InstantConsumer { config, channel };
             let formatter = AmexAuthFormatter {};
             let sender = AmexSender {
                 url: "http://192.168.50.70:9090/auth_transactions".to_owned(),
             };
 
-            send_message(consumer, formatter, sender)?;
+            start_consuming(consumer, formatter, sender)?;
         }
 
-        _ => panic!("No process available for {}", provider),
+        _ => return Err(eyre!("No process available for {}", config.provider_slug)),
     }
 
     connection.close()?;

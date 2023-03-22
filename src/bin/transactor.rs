@@ -9,34 +9,26 @@ use rand::prelude::*;
 use rand::Rng;
 use std::fs::File;
 use std::time;
+use tracing::debug;
+use tracing::info;
 use uuid::Uuid;
 
-use atalanta::configuration::{load_config, load_settings};
+use atalanta::configuration::{load_settings, load_transactor_config};
 use atalanta::initialise::startup;
-use atalanta::models::{Config, Settings, Transaction};
+use atalanta::models::{Settings, Transaction, TransactorConfig};
 
-#[tracing::instrument(ret)]
 fn main() -> Result<()> {
+    info!("starting transactor");
     startup()?;
 
-    println!("Starting transactor!");
+    let settings = load_settings()?;
+    let config = load_transactor_config(&settings)?;
 
-    let config_data: Config = load_config()?;
-    let settings: Settings = load_settings()?;
+    info!("configuration:\n{:#?}'", config);
 
-    println!("Configuration: '{:?}'", config_data);
+    let payment_card_tokens = load_payment_card_tokens(&config.provider_slug)?;
 
-    let payment_card_tokens = load_payment_card_tokens(&config_data.provider_slug)?;
-
-    let start = time::Instant::now();
-    let transaction_count: u64 = transaction_producer(config_data, settings, payment_card_tokens)?;
-    let duration = start.elapsed();
-    println!(
-        "Final count: {}, duration = {:?}",
-        transaction_count, duration
-    );
-
-    Ok(())
+    transaction_producer(config, settings, payment_card_tokens)
 }
 
 fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>> {
@@ -61,14 +53,11 @@ fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>>
 }
 
 fn transaction_producer(
-    config_data: Config,
+    config_data: TransactorConfig,
     settings: Settings,
     payment_card_tokens: Vec<StringRecord>,
-) -> Result<u64> {
+) -> Result<()> {
     //Manages the process of creating raw transactions
-    let mut count: u64 = 0;
-    let mut total_count: u64 = 0;
-
     let delay = time::Duration::from_millis(1000 / config_data.transactions_per_second);
     println!("Delay setting - TODO: {}", delay.as_millis());
 
@@ -92,10 +81,6 @@ fn transaction_producer(
     )?;
 
     loop {
-        count += 1;
-        total_count += 1;
-        println!("Count: {}", count);
-
         // Select a payment provider based on weighted selection,
         // visa provides many more transactions than mastercard or amex
         let payment_provider = select_payment_provider(&config_data.percentage)?;
@@ -103,26 +88,17 @@ fn transaction_producer(
             "transactions.{}.{}",
             payment_provider, config_data.provider_slug
         );
-        println!("routing_key: {}", routing_key);
 
         //Select a token to use for this payment provider, along with first six and last four
         //This could be an inefficient process since we have to look through a list of StringRecords
         let payment_details = select_payment_details(&payment_card_tokens, payment_provider)?;
         tx = create_transaction(&config_data, &payment_details)?;
 
-        if total_count >= config_data.maximum_number_transactions {
-            println!("Produced {} transactions.", count);
-            break;
-        }
-
+        debug!(?tx);
         queue_transaction(&exchange, tx, &routing_key)?;
 
         std::thread::sleep(delay);
     }
-
-    queue_connection.close()?;
-
-    Ok(count)
 }
 
 fn select_payment_details(
@@ -140,7 +116,7 @@ fn select_payment_details(
 }
 
 fn create_transaction(
-    config: &Config,
+    config: &TransactorConfig,
     payment_card_tokens: &Vec<StringRecord>,
 ) -> Result<Transaction> {
     let token = payment_card_tokens

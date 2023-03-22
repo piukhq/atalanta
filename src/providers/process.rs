@@ -1,13 +1,15 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
+use std::thread::sleep;
+
 use amiquip::{
-    Channel, ConsumerMessage, ConsumerOptions, ExchangeDeclareOptions, ExchangeType,
+    Channel, ConsumerMessage, ConsumerOptions, ExchangeDeclareOptions, ExchangeType, Queue,
     QueueDeclareOptions,
 };
+use chrono::{Duration, Utc};
 use color_eyre::Result;
-use std::time::{Duration, Instant};
+use tracing::{info, trace};
 
-use crate::configuration::load_config;
-use crate::models::{Config, Transaction};
+use crate::models::{DistributorConfig, Transaction};
 use crate::providers::*;
 use crate::senders::Sender;
 
@@ -17,8 +19,30 @@ pub trait Consumer {
         F: Fn(Vec<Transaction>) -> Result<()>;
 }
 
-// A consumer that reads messages off a queue and sends them immediately.
+fn queue_declare<'a>(config: &DistributorConfig, channel: &'a Channel) -> Result<Queue<'a>> {
+    let exchange = channel.exchange_declare(
+        ExchangeType::Topic,
+        "transactions",
+        ExchangeDeclareOptions::default(),
+    )?;
+
+    let name = format!("perf-{}", config.provider_slug);
+    let queue = channel.queue_declare(&name, QueueDeclareOptions::default())?;
+
+    channel.queue_bind(
+        queue.name(),
+        exchange.name(),
+        &config.routing_key,
+        Default::default(),
+    )?;
+
+    Ok(queue)
+}
+
+/// A consumer that reads messages off a queue and sends them immediately.
+/// Useful for auth providers that generally run in realtime.
 pub struct InstantConsumer {
+    pub config: DistributorConfig,
     pub channel: Channel,
 }
 
@@ -27,50 +51,20 @@ impl Consumer for InstantConsumer {
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
     {
-        let config_data: Config = load_config()?;
-        let routing_key = &config_data.routing_key;
-        let queue_name = format!("atalanta-{}", config_data.provider_slug);
+        let queue = queue_declare(&self.config, &self.channel)?;
 
-        let mut count: u64 = 0;
-
-        let exchange = self.channel.exchange_declare(
-            ExchangeType::Topic,
-            "transactions",
-            ExchangeDeclareOptions::default(),
-        )?;
-        let queue = self
-            .channel
-            .queue_declare(queue_name, QueueDeclareOptions::default())?;
-        self.channel.queue_bind(
-            queue.name(),
-            exchange.name(),
-            routing_key,
-            Default::default(),
-        )?;
-
-        println!("Waiting for messages. Press Ctrl-C to exit.");
-        println!("Routing key: {}", routing_key);
-        let mut start = Instant::now();
+        info!(self.config.routing_key, "waiting for messages");
 
         let consumer = queue.consume(ConsumerOptions::default())?;
         for message in consumer.receiver().into_iter() {
             match message {
                 ConsumerMessage::Delivery(delivery) => {
-                    if count == 0 {
-                        start = Instant::now();
-                    }
                     let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
                     f(vec![tx])?;
                     consumer.ack(delivery)?;
-                    count += 1;
-
-                    if count == 100 {
-                        let duration = start.elapsed();
-                        println!("Final count: {}, duration = {:?}", count, duration);
-                    }
                 }
                 other => {
-                    println!("Consumer ended: {:?}", other);
+                    info!(message = ?other, "consumer ended");
                     break;
                 }
             }
@@ -80,8 +74,11 @@ impl Consumer for InstantConsumer {
     }
 }
 
-// A consumer that reads messages off a queue and sends them after a delay.
+/// A consumer that reads messages off a queue and sends them after a delay.
+/// Useful for settlement providers that send transactions one at a time, usually some time after
+/// the corresponding auth transaction was sent.
 pub struct DelayConsumer {
+    pub config: DistributorConfig,
     pub channel: Channel,
     pub delay: Duration,
 }
@@ -91,60 +88,61 @@ impl Consumer for DelayConsumer {
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
     {
-        let config_data: Config = load_config()?;
-        let routing_key = config_data.routing_key;
-        let queue_name = format!("atalanta-{}", config_data.provider_slug);
-
-        let exchange = self.channel.exchange_declare(
-            ExchangeType::Topic,
-            "transactions",
-            ExchangeDeclareOptions::default(),
-        )?;
-        let queue = self
-            .channel
-            .queue_declare(&queue_name, QueueDeclareOptions::default())?;
-        self.channel.queue_bind(
-            queue.name(),
-            exchange.name(),
-            &routing_key,
-            Default::default(),
-        )?;
-
-        println!("Waiting for messages. Press Ctrl-C to exit.");
-        println!("Routing key: {}", routing_key);
-        let mut transactions: Vec<Transaction> = Vec::new();
+        let queue = queue_declare(&self.config, &self.channel)?;
 
         let consumer = queue.consume(ConsumerOptions::default())?;
 
+        info!(self.config.routing_key, "waiting for messages");
         for message in consumer.receiver().iter() {
-            println!("Consuming messages");
+            trace!("message received");
             match message {
                 ConsumerMessage::Delivery(delivery) => {
-                    transactions.push(rmp_serde::from_slice(&delivery.body)?);
-                    consumer.ack(delivery)?;
+                    let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
 
-                    if transactions.len() == config_data.batch_size {
-                        f(transactions.clone())?;
-                        transactions.clear();
+                    let now = Utc::now();
+                    let send_at = tx.transaction_date + self.delay;
+                    let delay = send_at - now;
+                    match delay.to_std() {
+                        Ok(delay) => {
+                            info!(?send_at, ?delay, "waiting");
+                            sleep(delay);
+                        }
+                        Err(_) => {
+                            info!("delay < 0; transaction must be sent immediately");
+                        }
                     }
+
+                    consumer.ack(delivery)?;
+                    f(vec![tx])?;
                 }
                 other => {
-                    println!("Consumer ended: {:?}", other);
+                    info!(message = ?other, "consumer ended");
                     break;
                 }
             }
-        }
-
-        if !transactions.is_empty() {
-            f(transactions.clone())?;
         }
 
         Ok(())
     }
 }
 
-/// A generic function that can send messages via any Sender.
-pub fn send_message<C, F, S>(consumer: C, formatter: F, sender: S) -> Result<()>
+/// A consumer that reads all messages off a queue and sends them as a batch.
+/// Useful for file-based providers that run as a scheduled process.
+pub struct OneShotConsumer {
+    pub channel: Channel,
+}
+
+impl Consumer for OneShotConsumer {
+    fn consume<F>(&self, f: F) -> Result<()>
+    where
+        F: Fn(Vec<Transaction>) -> Result<()>,
+    {
+        todo!()
+    }
+}
+
+/// A generic function that can start any consumer with a given transaction formatter & sender.
+pub fn start_consuming<C, F, S>(consumer: C, formatter: F, sender: S) -> Result<()>
 where
     C: Consumer,
     F: Formatter,

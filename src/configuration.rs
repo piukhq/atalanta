@@ -1,17 +1,16 @@
-use crate::models::{Config, Settings};
+use crate::models::{DistributorConfig, Settings, TransactorConfig};
 use color_eyre::Result;
 use std::fs;
 use toml;
 
-pub fn load_config() -> Result<Config> {
-    let filename = "config.toml";
-    let contents = fs::read_to_string(filename)?;
-    let config: Config = toml::from_str(&contents)?;
+pub fn load_transactor_config(settings: &Settings) -> Result<TransactorConfig> {
+    let contents = fs::read_to_string(&settings.config_path)?;
+    Ok(toml::from_str(&contents)?)
+}
 
-    println!("Loading config, provider slug: {}", config.provider_slug);
-    println!("Transaction rate: {}", config.transactions_per_second);
-
-    Ok(config)
+pub fn load_distributor_config(settings: &Settings) -> Result<DistributorConfig> {
+    let contents = fs::read_to_string(&settings.config_path)?;
+    Ok(toml::from_str(&contents)?)
 }
 
 pub fn load_settings() -> Result<Settings> {

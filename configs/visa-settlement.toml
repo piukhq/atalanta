@@ -1,0 +1,2 @@
+provider_slug = "visa-settlement"
+routing_key = "transactions.visa.*"

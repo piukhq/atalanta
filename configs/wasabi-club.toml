@@ -1,10 +1,6 @@
 transactions_per_second = 1
-merchant_slug = "wasabi-club"
-payment_provider = "visa"
-deployed_slug = "wasabi-club"
-routing_key = "transactions.*.perf-wasabi-club"
-batch_size = 5
+provider_slug = "wasabi-club"
+routing_key = "transactions.*.wasabi-club"
 amount_min = 100
 amount_max = 30000
-maximum_number_transactions = 5
 percentage = [['visa', 0], ['mastercard', 0], ['amex', 100]]
