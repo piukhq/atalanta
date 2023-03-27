@@ -1,9 +1,11 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
-use crate::{models::Transaction, providers::to_pounds};
+use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use csv::Writer;
 use rand::Rng;
 use serde::Serialize;
+
+use super::Formatter;
 
 #[derive(Serialize)]
 pub struct WasabiTransaction {
@@ -22,30 +24,34 @@ pub struct WasabiTransaction {
     pub receipt_no: String,
 }
 
-pub fn wasabi_transaction(transactions: Vec<Transaction>) -> Result<String> {
-    let mut wtr = Writer::from_writer(vec![]);
+pub struct WasabiFormatter;
 
-    for transaction in transactions {
-        let wasabi_tx = WasabiTransaction {
-            store_no: "A076".to_owned(),
-            entry_no: "16277".to_owned(),
-            transaction_no: "123456789".to_owned(),
-            tender_type: "3".to_owned(),
-            amount: to_pounds(transaction.amount),
-            card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
-            card_type_name: transaction.payment_provider.clone(),
-            auth_code: transaction.auth_code.clone(),
-            authorization_ok: "1".to_owned(),
-            date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
-            time: transaction.transaction_date.format("%H-%M-%S").to_string(),
-            eft_merchant_no: transaction.identifier.clone(),
-            receipt_no: padded_random_int(12, 13),
-        };
+impl Formatter for WasabiFormatter {
+    fn format(transactions: Vec<Transaction>) -> Result<String> {
+        let mut wtr = Writer::from_writer(vec![]);
 
-        wtr.serialize(wasabi_tx)?;
+        for transaction in transactions {
+            let wasabi_tx = WasabiTransaction {
+                store_no: "A076".to_owned(),
+                entry_no: "16277".to_owned(),
+                transaction_no: "123456789".to_owned(),
+                tender_type: "3".to_owned(),
+                amount: to_pounds(transaction.amount),
+                card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
+                card_type_name: transaction.payment_provider.clone(),
+                auth_code: transaction.auth_code.clone(),
+                authorization_ok: "1".to_owned(),
+                date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
+                time: transaction.transaction_date.format("%H-%M-%S").to_string(),
+                eft_merchant_no: transaction.identifier.clone(),
+                receipt_no: padded_random_int(12, 13),
+            };
+
+            wtr.serialize(wasabi_tx)?;
+        }
+        let data = String::from_utf8(wtr.into_inner()?)?;
+        Ok(data)
     }
-    let data = String::from_utf8(wtr.into_inner()?)?;
-    Ok(data)
 }
 
 fn padded_random_int(raise_power: u32, num_chars: u32) -> String {
@@ -96,8 +102,9 @@ mod tests {
             },
         ];
 
-        let wasabi_tx = wasabi_transaction(test_transactions).unwrap();
+        let wasabi_tx = WasabiFormatter::format(test_transactions).unwrap();
 
-        assert_eq!(wasabi_tx.len(), 368);
+        // 1 header, 2 transactions, 1 newline
+        assert_eq!(wasabi_tx.split('\n').count(), 4);
     }
 }

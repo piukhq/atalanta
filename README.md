@@ -1,12 +1,12 @@
 # Atalanta
 
-### In Greek mythology, a renowned and swift-footed huntress.
+### In Greek mythology, a renowned and swift-footed huntress
 
 ---
 
 A Rust application for generating transaction matching data for performance testing Harmonia.
 
-Jira ticket: https://hellobink.atlassian.net/browse/MER-2081
+Jira ticket: <https://hellobink.atlassian.net/browse/MER-2081>
 
 Two main components, bins, for creating transaction data and uploading transactions to various locations.
 
@@ -29,6 +29,9 @@ Example code is provided in the examples directory, which can be run as follows:
 Unit tests are executed as follows:
 
 `cargo test -- --nocapture`
+
+For better output, you can [install cargo-nextest](https://nexte.st/book/pre-built-binaries.html)
+and use `cargo nextest run`.
 
 Note: --nocapture allows print statements to print during the test, if not provided print statements are not displayed.
 

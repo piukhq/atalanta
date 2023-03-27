@@ -12,4 +12,31 @@ pub struct TransactorConfig {
 pub struct DistributorConfig {
     pub provider_slug: String,
     pub routing_key: String,
+
+    pub sender: SenderConfig,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub enum SenderConfig {
+    API(APISenderConfig),
+    SFTP(SFTPSenderConfig),
+    Blob(BlobSenderConfig),
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct APISenderConfig {
+    pub base_url: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct SFTPSenderConfig {
+    pub host: String,
+    pub port: u16,
+}
+
+#[derive(serde::Deserialize, Debug)]
+pub struct BlobSenderConfig {
+    pub account: String,
+    pub access_key: String,
+    pub container: String,
 }

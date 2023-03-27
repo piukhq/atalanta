@@ -1,2 +1,5 @@
 provider_slug = "visa-settlement"
 routing_key = "transactions.visa.*"
+
+[sender.API]
+base_url = "http://localhost:6502/mock/auth_transactions/visa"

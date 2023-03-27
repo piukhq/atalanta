@@ -1,55 +1,23 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use crate::{models::Transaction, providers::to_pounds};
+use crate::{formatters::to_pounds, models::Transaction};
 use chrono::Utc;
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 use serde_json::json;
 
-pub fn visa_auth(transaction: &Transaction) -> Result<String> {
-    let amount = to_pounds(transaction.amount);
-    let auth = json!({
-        "CardId": transaction.transaction_id[0..9],
-        "ExternalUserId": transaction.token,
-        "MessageElementsCollection": [
-            {"Key": "Transaction.BillingAmount", "Value": amount},
-            {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
-            {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
-            {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
-            {"Key": "Transaction.TransactionAmount", "Value": amount},
-            {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
-            {"Key": "Transaction.VisaMerchantName", "Value": "Bink Shop"},
-            {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
-            {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
-            {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
-            {"Key": "Transaction.SettlementDate", "Value": ""},
-            {"Key": "Transaction.SettlementAmount", "Value": 0},
-            {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 0},
-            {"Key": "Transaction.SettlementBillingAmount", "Value": 0},
-            {"Key": "Transaction.SettlementBillingCurrency", "Value": ""},
-            {"Key": "Transaction.SettlementUSDAmount", "Value": 0},
-            {"Key": "Transaction.CurrencyCodeNumeric", "Value": "840"},
-            {"Key": "Transaction.BillingCurrencyCode", "Value": "840"},
-            {"Key": "Transaction.USDAmount", "Value": amount},
-            {"Key": "Transaction.MerchantLocalPurchaseDate ", "Value": "2019-12-19"},
-            {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
-            {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
-            {"Key": "Transaction.MerchantDateTimeGMT ", "Value": "2019-12-19T23:40:00"},
-            {"Key": "Transaction.AuthCode", "Value": transaction.auth_code},
-            {"Key": "Transaction.PanLastFour", "Value": transaction.last_four},
-        ],
-        "MessageId": "12345678",
-        "MessageName": "AuthMessageTest",
-        "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "AUTH"}],
-        "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4"
-    });
+use super::Formatter;
 
-    Ok(auth.to_string())
-}
+pub struct VisaAuthFormatter;
 
-pub fn visa_settlement(transaction: &Transaction) -> Result<String> {
-    let amount = to_pounds(transaction.amount);
-    let settlement = json!(
-        {
+impl Formatter for VisaAuthFormatter {
+    fn format(transactions: Vec<Transaction>) -> Result<String> {
+        let transaction = transactions
+            .into_iter()
+            .next()
+            .ok_or_else(|| eyre!("Expected at least one transaction."))?;
+
+        let amount = to_pounds(transaction.amount);
+        let auth = json!({
             "CardId": transaction.transaction_id[0..9],
             "ExternalUserId": transaction.token,
             "MessageElementsCollection": [
@@ -63,30 +31,82 @@ pub fn visa_settlement(transaction: &Transaction) -> Result<String> {
                 {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
                 {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
                 {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
-                {"Key": "Transaction.SettlementDate", "Value": Utc::now()},
-                {"Key": "Transaction.SettlementAmount", "Value": amount},
-                {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 826},
-                {"Key": "Transaction.SettlementBillingAmount", "Value": amount},
-                {"Key": "Transaction.SettlementBillingCurrency", "Value": "GBP"},
-                {"Key": "Transaction.SettlementUSDAmount", "Value": amount},
+                {"Key": "Transaction.SettlementDate", "Value": ""},
+                {"Key": "Transaction.SettlementAmount", "Value": 0},
+                {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 0},
+                {"Key": "Transaction.SettlementBillingAmount", "Value": 0},
+                {"Key": "Transaction.SettlementBillingCurrency", "Value": ""},
+                {"Key": "Transaction.SettlementUSDAmount", "Value": 0},
                 {"Key": "Transaction.CurrencyCodeNumeric", "Value": "840"},
                 {"Key": "Transaction.BillingCurrencyCode", "Value": "840"},
                 {"Key": "Transaction.USDAmount", "Value": amount},
-                {"Key": "Transaction.MerchantLocalPurchaseDate", "Value": "2019-12-19"},
+                {"Key": "Transaction.MerchantLocalPurchaseDate ", "Value": "2019-12-19"},
                 {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
                 {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
-                {"Key": "Transaction.MerchantDateTimeGMT", "Value": transaction.transaction_date.to_string()},
+                {"Key": "Transaction.MerchantDateTimeGMT ", "Value": "2019-12-19T23:40:00"},
                 {"Key": "Transaction.AuthCode", "Value": transaction.auth_code},
                 {"Key": "Transaction.PanLastFour", "Value": transaction.last_four},
             ],
             "MessageId": "12345678",
-            "MessageName": "SettlementMessageTest",
-            "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "SETTLE"}],
-            "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4",
-        }
-    );
+            "MessageName": "AuthMessageTest",
+            "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "AUTH"}],
+            "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4"
+        });
 
-    Ok(settlement.to_string())
+        Ok(auth.to_string())
+    }
+}
+
+pub struct VisaSettlementFormatter;
+
+impl Formatter for VisaSettlementFormatter {
+    fn format(transactions: Vec<Transaction>) -> Result<String> {
+        let transaction = transactions
+            .into_iter()
+            .next()
+            .ok_or_else(|| eyre!("Expected at least one transaction."))?;
+
+        let amount = to_pounds(transaction.amount);
+        let settlement = json!(
+            {
+                "CardId": transaction.transaction_id[0..9],
+                "ExternalUserId": transaction.token,
+                "MessageElementsCollection": [
+                    {"Key": "Transaction.BillingAmount", "Value": amount},
+                    {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
+                    {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
+                    {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
+                    {"Key": "Transaction.TransactionAmount", "Value": amount},
+                    {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
+                    {"Key": "Transaction.VisaMerchantName", "Value": "Bink Shop"},
+                    {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
+                    {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
+                    {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
+                    {"Key": "Transaction.SettlementDate", "Value": Utc::now()},
+                    {"Key": "Transaction.SettlementAmount", "Value": amount},
+                    {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 826},
+                    {"Key": "Transaction.SettlementBillingAmount", "Value": amount},
+                    {"Key": "Transaction.SettlementBillingCurrency", "Value": "GBP"},
+                    {"Key": "Transaction.SettlementUSDAmount", "Value": amount},
+                    {"Key": "Transaction.CurrencyCodeNumeric", "Value": "840"},
+                    {"Key": "Transaction.BillingCurrencyCode", "Value": "840"},
+                    {"Key": "Transaction.USDAmount", "Value": amount},
+                    {"Key": "Transaction.MerchantLocalPurchaseDate", "Value": "2019-12-19"},
+                    {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
+                    {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
+                    {"Key": "Transaction.MerchantDateTimeGMT", "Value": transaction.transaction_date.to_string()},
+                    {"Key": "Transaction.AuthCode", "Value": transaction.auth_code},
+                    {"Key": "Transaction.PanLastFour", "Value": transaction.last_four},
+                ],
+                "MessageId": "12345678",
+                "MessageName": "SettlementMessageTest",
+                "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "SETTLE"}],
+                "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4",
+            }
+        );
+
+        Ok(settlement.to_string())
+    }
 }
 
 #[cfg(test)]
@@ -117,9 +137,9 @@ mod tests {
             last_four: "7890".to_owned(),
         };
 
-        let json_result = visa_auth(&test_transaction);
+        let json_result = VisaAuthFormatter::format(vec![test_transaction]);
         assert_eq!(
-            json_result.unwrap(),
+            serde_json::from_str::<serde_json::Value>(&json_result.unwrap()).unwrap(),
             json!({
                 "CardId": "test_tran",
                 "ExternalUserId": "98765432123456789",
@@ -148,14 +168,13 @@ mod tests {
                     {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
                     {"Key": "Transaction.MerchantDateTimeGMT ", "Value": "2019-12-19T23:40:00"},
                     {"Key": "Transaction.AuthCode", "Value": "123456"},
-                    {"Key": "Transaction.PanLastFour", "Value": "2345"},
+                    {"Key": "Transaction.PanLastFour", "Value": "7890"},
                     ],
                     "MessageId": "12345678",
                     "MessageName": "AuthMessageTest",
                     "UserDefinedFieldsCollection": [{"Key": "TransactionType", "Value": "AUTH"}],
                     "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4"
             })
-            .to_string()
         );
     }
 }

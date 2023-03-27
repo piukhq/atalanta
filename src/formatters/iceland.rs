@@ -1,8 +1,10 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
-use crate::{models::Transaction, providers::to_pounds};
+use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use csv::WriterBuilder;
 use serde::Serialize;
+
+use super::Formatter;
 
 #[derive(Serialize)]
 pub struct IcelandTransaction {
@@ -34,31 +36,36 @@ pub struct IcelandTransaction {
     pub auth_code: String,
 }
 
-pub fn iceland_transaction(transactions: Vec<Transaction>) -> Result<String> {
-    let mut wtr = WriterBuilder::new().from_writer(vec![]);
+pub struct IcelandFormatter;
 
-    // TODO: card_scheme name and number, first six and last four.
-    for transaction in transactions {
-        let iceland_tx = IcelandTransaction {
-            first_six: "123456".to_owned(),
-            last_four: "4444".to_owned(),
-            expiry: "01/80".to_owned(),
-            card_scheme_id: "6".to_owned(),
-            card_scheme_name: "Visa Debit".to_owned(),
-            identifier: transaction.identifier.clone(),
-            transaction_date: transaction.transaction_date.to_string(),
-            amount: to_pounds(transaction.amount),
-            amount_unit: "GBP".to_owned(),
-            cashback_value: ".00".to_owned(),
-            cashback_unit: "GBP".to_owned(),
-            transaction_id: transaction.transaction_id,
-            auth_code: transaction.auth_code.clone(),
-        };
+impl Formatter for IcelandFormatter {
+    fn format(transactions: Vec<Transaction>) -> Result<String> {
+        let mut wtr = WriterBuilder::new().from_writer(vec![]);
 
-        wtr.serialize(iceland_tx)?;
+        // TODO: card_scheme name and number, first six and last four.
+        for transaction in transactions {
+            let iceland_tx = IcelandTransaction {
+                first_six: "123456".to_owned(),
+                last_four: "4444".to_owned(),
+                expiry: "01/80".to_owned(),
+                card_scheme_id: "6".to_owned(),
+                card_scheme_name: "Visa Debit".to_owned(),
+                identifier: transaction.identifier.clone(),
+                transaction_date: transaction.transaction_date.to_string(),
+                amount: to_pounds(transaction.amount),
+                amount_unit: "GBP".to_owned(),
+                cashback_value: ".00".to_owned(),
+                cashback_unit: "GBP".to_owned(),
+                transaction_id: transaction.transaction_id,
+                auth_code: transaction.auth_code.clone(),
+            };
+
+            wtr.serialize(iceland_tx)?;
+        }
+        let data = String::from_utf8(wtr.into_inner()?)?;
+
+        Ok(data)
     }
-    let data = String::from_utf8(wtr.into_inner()?)?;
-    Ok(data)
 }
 
 #[cfg(test)]
@@ -97,7 +104,7 @@ mod tests {
             },
         ];
 
-        let iceland_tx = iceland_transaction(test_transactions).unwrap();
+        let iceland_tx = IcelandFormatter::format(test_transactions).unwrap();
 
         assert_eq!(iceland_tx.len(), 519);
     }
