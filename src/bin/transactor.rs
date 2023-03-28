@@ -27,12 +27,13 @@ fn main() -> Result<()> {
     info!("configuration:\n{:#?}'", config);
 
     let payment_card_tokens = load_payment_card_tokens(&config.provider_slug)?;
+    let identifiers = load_retailer_identifiers(&config.provider_slug)?;
 
-    transaction_producer(config, settings, payment_card_tokens)
+    transaction_producer(config, settings, payment_card_tokens, identifiers)
 }
 
 fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>> {
-    // Load token and slugs derived from the Hemres database
+    // Load token and slugs derived from the Hermes database
     //Only tokens related to the current retailer are loaded
     let mut tokens = Vec::new();
 
@@ -52,10 +53,31 @@ fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>>
     Ok(tokens)
 }
 
+fn load_retailer_identifiers(merchant_slug: &String) -> Result<Vec<StringRecord>> {
+    //Only identifiers related to the current retailer are loaded
+    let mut identifiers = Vec::new();
+
+    let file_path = "./files/perf_mids.csv";
+    let file = File::open(file_path)?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(file);
+
+    for result in rdr.records() {
+        let record = result?;
+        if record.iter().any(|field| field == merchant_slug) {
+            identifiers.push(record);
+        }
+    }
+
+    Ok(identifiers)
+}
+
 fn transaction_producer(
     config_data: TransactorConfig,
     settings: Settings,
     payment_card_tokens: Vec<StringRecord>,
+    identifiers: Vec<StringRecord>
 ) -> Result<()> {
     //Manages the process of creating raw transactions
     let delay = time::Duration::from_millis(1000 / config_data.transactions_per_second);
@@ -91,8 +113,9 @@ fn transaction_producer(
 
         //Select a token to use for this payment provider, along with first six and last four
         //This could be an inefficient process since we have to look through a list of StringRecords
-        let payment_details = select_payment_details(&payment_card_tokens, payment_provider)?;
-        tx = create_transaction(&config_data, &payment_details)?;
+        let payment_details = select_payment_details(&payment_card_tokens, payment_provider.clone())?;
+        let identifier_details = select_identifiers_per_payment_provider(&identifiers, payment_provider.clone())?;
+        tx = create_transaction(&config_data, &payment_details, &identifier_details)?;
 
         debug!(?tx);
         queue_transaction(&exchange, tx, &routing_key)?;
@@ -115,13 +138,35 @@ fn select_payment_details(
     Ok(provider_list)
 }
 
+//Provided with a set of retailer specific identifier records
+//select a subset of identifiers based on the payment provider
+fn select_identifiers_per_payment_provider(
+    identifiers: &Vec<StringRecord>,
+    payment_provider: String,
+) -> Result<Vec<StringRecord>> {
+    let mut identifier_list = Vec::new();
+    for item in identifiers {
+        if item[1] == payment_provider {
+            identifier_list.push(item.clone());
+        }
+    }
+
+    Ok(identifier_list)
+}
+
 fn create_transaction(
     config: &TransactorConfig,
     payment_card_tokens: &Vec<StringRecord>,
+    identifiers: &Vec<StringRecord>
 ) -> Result<Transaction> {
     let token = payment_card_tokens
         .choose(&mut rand::thread_rng())
         .ok_or(eyre!("failed to select payment card token"))?;
+
+    let identifier = identifiers
+        .choose(&mut rand::thread_rng())
+        .ok_or(eyre!("failed to select identifier"))?;
+
     Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
@@ -129,7 +174,7 @@ fn create_transaction(
         merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
-        identifier: "12345678".to_owned(),
+        identifier: identifier[2].to_string(),
         token: token[0].to_string(),
         first_six: token[3].to_string(),
         last_four: token[4].to_string(),

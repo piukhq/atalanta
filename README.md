@@ -38,3 +38,11 @@ Note: --nocapture allows print statements to print during the test, if not provi
 Add packages using:
 
 `cargo add <<package name>>`
+
+
+MID's are selected at random from a subset of relevant retailer MID's which are extracted from the perf_mids.csv file in the files directory.
+To create the perf_mids.csv use the following psql query, don't forget to port forward to the postgres database:
+```console
+psql $(kubectl get secret azure-pgfs -o json | jq -r .data.common_harmonia | base64 --decode | sed 's/bink-uksouth-.*.postgres.database.azure.com/127.0.0.1/g') -t -A -F"," -c "select LS.slug, PP.slug, MI.identifier, MI.identifier_type, MI.location_id, MI.merchant_internal_id from merchant_identifier MI, payment_provider PP, loyalty_scheme LS where MI.payment_provider_id = PP.id AND MI.loyalty_scheme_id = LS.id ORDER BY LS.slug;" > perf_mids.csv
+```
+

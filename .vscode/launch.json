@@ -19,6 +19,9 @@
                     "kind": "bin"
                 }
             },
+            "env": {
+                "CONFIG_PATH": "configs/wasabi-club.toml"
+            },
             "args": [],
             "cwd": "${workspaceFolder}"
         },
@@ -38,8 +41,9 @@
                 }
             },
             "env": {
-                "AMEX_CLIENT_ID": "DWHafwf8OLzbzL7vIQfZ6jXuYsuQf6EShJ4IkKoGBIwNd0xfNG",
-                "AMEX_CLIENT_SECRET": "dFuupR8r2TJPYUxpByBVBHHkJiR4nriZDCWndD4755jMsX0usq"
+                "CONFIG_PATH": "configs/visa-settlement.toml",
+                "AMEX_CLIENT_ID": "client_id",
+                "AMEX_CLIENT_SECRET": "client_secret"
             },
             "args": [
                 "visa-auth"
