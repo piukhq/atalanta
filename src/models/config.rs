@@ -1,4 +1,4 @@
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize)]
 pub struct TransactorConfig {
     pub provider_slug: String,
     pub routing_key: String,
@@ -8,7 +8,7 @@ pub struct TransactorConfig {
     pub percentage: [(String, i32); 3],
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Clone)]
 pub struct DistributorConfig {
     pub provider_slug: String,
     pub routing_key: String,
@@ -16,25 +16,26 @@ pub struct DistributorConfig {
     pub sender: SenderConfig,
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Clone)]
 pub enum SenderConfig {
     API(APISenderConfig),
+    Amex(APISenderConfig),
     SFTP(SFTPSenderConfig),
     Blob(BlobSenderConfig),
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Clone)]
 pub struct APISenderConfig {
-    pub base_url: String,
+    pub url: String,
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Clone)]
 pub struct SFTPSenderConfig {
     pub host: String,
     pub port: u16,
 }
 
-#[derive(serde::Deserialize, Debug)]
+#[derive(serde::Deserialize, Clone)]
 pub struct BlobSenderConfig {
     pub account: String,
     pub access_key: String,

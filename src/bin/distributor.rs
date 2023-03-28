@@ -7,7 +7,7 @@ use color_eyre::{eyre::eyre, Result};
 use atalanta::configuration::{load_distributor_config, load_settings};
 use atalanta::formatters::*;
 use atalanta::initialise::startup;
-use atalanta::models::{APISenderConfig, DistributorConfig, SenderConfig};
+use atalanta::models::DistributorConfig;
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -33,50 +33,37 @@ fn start_distributor(config: DistributorConfig) -> Result<()> {
     match config.provider_slug.as_str() {
         "wasabi-club" => {
             let consumer = BatchConsumer { channel };
-            let sender = SFTPSender {
-                host: "sftp://wasabi.com".to_owned(),
-                port: 22,
-            };
-
+            let sender = SFTPSender::try_from(config.sender)?;
             start_consuming::<_, WasabiFormatter, _>(consumer, sender)?;
         }
         "iceland-bonus-card" => {
             let consumer = BatchConsumer { channel };
-            let sender = SFTPSender {
-                host: "sftp://wasabi.com".to_owned(),
-                port: 22,
-            };
-
+            let sender = SFTPSender::try_from(config.sender)?;
             start_consuming::<_, IcelandFormatter, _>(consumer, sender)?;
         }
         "visa-auth" => {
-            let consumer = InstantConsumer { config, channel };
-            let sender = APISender {
-                url: "http://192.168.50.70:9090/auth_transactions/visa".to_owned(),
+            let consumer = InstantConsumer {
+                config: config.clone(),
+                channel,
             };
-
+            let sender = APISender::try_from(config.sender)?;
             start_consuming::<_, VisaAuthFormatter, _>(consumer, sender)?;
         }
         "visa-settlement" => {
-            let url = match &config.sender {
-                SenderConfig::API(APISenderConfig { base_url }) => base_url.to_owned(),
-                _ => panic!("no api base url"),
-            };
             let consumer = DelayConsumer {
-                config,
+                config: config.clone(),
                 channel,
                 delay: Duration::seconds(10),
             };
-            let sender = APISender { url };
-
+            let sender = APISender::try_from(config.sender)?;
             start_consuming::<_, VisaSettlementFormatter, _>(consumer, sender)?;
         }
         "amex-auth" => {
-            let consumer = InstantConsumer { config, channel };
-            let sender = AmexSender {
-                url: "http://192.168.50.70:9090/auth_transactions".to_owned(),
+            let consumer = InstantConsumer {
+                config: config.clone(),
+                channel,
             };
-
+            let sender = AmexSender::try_from(config.sender)?;
             start_consuming::<_, AmexAuthFormatter, _>(consumer, sender)?;
         }
 

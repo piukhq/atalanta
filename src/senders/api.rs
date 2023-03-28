@@ -1,8 +1,21 @@
+use crate::models::SenderConfig;
+
 use super::Sender;
-use color_eyre::Result;
+use color_eyre::{eyre::eyre, Result};
 
 pub struct APISender {
     pub url: String,
+}
+
+impl TryFrom<SenderConfig> for APISender {
+    type Error = color_eyre::Report;
+
+    fn try_from(config: SenderConfig) -> Result<Self> {
+        match config {
+            SenderConfig::API(config) => Ok(APISender { url: config.url }),
+            _ => Err(eyre!("Invalid sender config type, expected API")),
+        }
+    }
 }
 
 impl Sender for APISender {

@@ -24,8 +24,6 @@ fn main() -> Result<()> {
     let settings = load_settings()?;
     let config = load_transactor_config(&settings)?;
 
-    info!("configuration:\n{:#?}'", config);
-
     let payment_card_tokens = load_payment_card_tokens(&config.provider_slug)?;
     let identifiers = load_retailer_identifiers(&config.provider_slug)?;
 
@@ -77,7 +75,7 @@ fn transaction_producer(
     config_data: TransactorConfig,
     settings: Settings,
     payment_card_tokens: Vec<StringRecord>,
-    identifiers: Vec<StringRecord>
+    identifiers: Vec<StringRecord>,
 ) -> Result<()> {
     //Manages the process of creating raw transactions
     let delay = time::Duration::from_millis(1000 / config_data.transactions_per_second);
@@ -113,8 +111,10 @@ fn transaction_producer(
 
         //Select a token to use for this payment provider, along with first six and last four
         //This could be an inefficient process since we have to look through a list of StringRecords
-        let payment_details = select_payment_details(&payment_card_tokens, payment_provider.clone())?;
-        let identifier_details = select_identifiers_per_payment_provider(&identifiers, payment_provider.clone())?;
+        let payment_details =
+            select_payment_details(&payment_card_tokens, payment_provider.clone())?;
+        let identifier_details =
+            select_identifiers_per_payment_provider(&identifiers, payment_provider.clone())?;
         tx = create_transaction(&config_data, &payment_details, &identifier_details)?;
 
         debug!(?tx);
@@ -157,7 +157,7 @@ fn select_identifiers_per_payment_provider(
 fn create_transaction(
     config: &TransactorConfig,
     payment_card_tokens: &Vec<StringRecord>,
-    identifiers: &Vec<StringRecord>
+    identifiers: &Vec<StringRecord>,
 ) -> Result<Transaction> {
     let token = payment_card_tokens
         .choose(&mut rand::thread_rng())
