@@ -1,0 +1,9 @@
+transactions_per_second = 28
+provider_slug = "costa"
+routing_key = "transactions.*.costa"
+amount_min = 100
+amount_max = 5000
+percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]
+
+[sender.API]
+url = "http://localhost:6502/mock/costa/transactions"

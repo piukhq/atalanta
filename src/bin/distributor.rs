@@ -31,6 +31,14 @@ fn start_distributor(config: DistributorConfig) -> Result<()> {
     let channel = connection.open_channel(None)?;
 
     match config.provider_slug.as_str() {
+        "costa" => {
+            let consumer = InstantConsumer {
+                config: config.clone(),
+                channel,
+            };
+            let sender = APISender::try_from(config.sender)?;
+            start_consuming::<_, CostaFormatter, _>(consumer, sender)?;
+        }
         "wasabi-club" => {
             let consumer = BatchConsumer { channel };
             let sender = SFTPSender::try_from(config.sender)?;
