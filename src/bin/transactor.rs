@@ -115,7 +115,12 @@ fn transaction_producer(
             select_payment_details(&payment_card_tokens, payment_provider.clone())?;
         let identifier_details =
             select_identifiers_per_payment_provider(&identifiers, payment_provider.clone())?;
-        tx = create_transaction(&config_data, &payment_details, &identifier_details)?;
+        tx = create_transaction(
+            &config_data,
+            &payment_provider,
+            &payment_details,
+            &identifier_details
+        )?;
 
         debug!(?tx);
         queue_transaction(&exchange, tx, &routing_key)?;
@@ -156,6 +161,7 @@ fn select_identifiers_per_payment_provider(
 
 fn create_transaction(
     config: &TransactorConfig,
+    payment_provider: &String,
     payment_card_tokens: &Vec<StringRecord>,
     identifiers: &Vec<StringRecord>,
 ) -> Result<Transaction> {
@@ -170,7 +176,7 @@ fn create_transaction(
     Ok(Transaction {
         amount: rand::thread_rng().gen_range(config.amount_min..config.amount_max),
         transaction_date: Utc::now(),
-        payment_provider: "visa".to_owned(),
+        payment_provider: payment_provider.to_string(),
         merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,

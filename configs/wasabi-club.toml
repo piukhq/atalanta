@@ -4,3 +4,7 @@ routing_key = "transactions.*.wasabi-club"
 amount_min = 100
 amount_max = 30000
 percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]
+
+[sender.SFTP]
+host = "binktest_dev@sftp.gb.bink.com"
+port = 1111
