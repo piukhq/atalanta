@@ -35,7 +35,11 @@ where
     })
 }
 
-fn queue_declare<'a>(config: &DistributorConfig, channel: &'a Channel) -> Result<Queue<'a>> {
+fn queue_declare<'a>(
+    config: &DistributorConfig,
+    channel: &'a Channel,
+    options: QueueDeclareOptions,
+) -> Result<Queue<'a>> {
     let exchange = channel.exchange_declare(
         ExchangeType::Topic,
         "transactions",
@@ -43,7 +47,7 @@ fn queue_declare<'a>(config: &DistributorConfig, channel: &'a Channel) -> Result
     )?;
 
     let name = format!("perf-{}", config.provider_slug);
-    let queue = channel.queue_declare(&name, QueueDeclareOptions::default())?;
+    let queue = channel.queue_declare(&name, options)?;
 
     channel.queue_bind(
         queue.name(),

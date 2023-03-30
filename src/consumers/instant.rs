@@ -1,4 +1,4 @@
-use amiquip::{Channel, ConsumerMessage, ConsumerOptions};
+use amiquip::{Channel, ConsumerMessage, ConsumerOptions, QueueDeclareOptions};
 use color_eyre::Result;
 use tracing::info;
 
@@ -21,7 +21,7 @@ impl Consumer for InstantConsumer {
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
     {
-        let queue = queue_declare(&self.config, &self.channel)?;
+        let queue = queue_declare(&self.config, &self.channel, QueueDeclareOptions::default())?;
 
         info!(self.config.routing_key, "waiting for messages");
 

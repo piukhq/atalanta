@@ -40,12 +40,18 @@ fn start_distributor(config: DistributorConfig) -> Result<()> {
             start_consuming::<_, CostaFormatter, _>(consumer, sender)?;
         }
         "wasabi-club" => {
-            let consumer = BatchConsumer { channel };
+            let consumer = BatchConsumer {
+                config: config.clone(),
+                channel,
+            };
             let sender = SFTPSender::try_from(config.sender)?;
             start_consuming::<_, WasabiFormatter, _>(consumer, sender)?;
         }
         "iceland-bonus-card" => {
-            let consumer = BatchConsumer { channel };
+            let consumer = BatchConsumer {
+                config: config.clone(),
+                channel,
+            };
             let sender = SFTPSender::try_from(config.sender)?;
             start_consuming::<_, IcelandFormatter, _>(consumer, sender)?;
         }

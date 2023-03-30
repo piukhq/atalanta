@@ -1,6 +1,6 @@
 use std::thread::sleep;
 
-use amiquip::{Channel, ConsumerMessage, ConsumerOptions};
+use amiquip::{Channel, ConsumerMessage, ConsumerOptions, QueueDeclareOptions};
 use chrono::{Duration, Utc};
 use color_eyre::Result;
 use tracing::{info, trace};
@@ -26,7 +26,7 @@ impl Consumer for DelayConsumer {
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
     {
-        let queue = queue_declare(&self.config, &self.channel)?;
+        let queue = queue_declare(&self.config, &self.channel, QueueDeclareOptions::default())?;
 
         let consumer = queue.consume(ConsumerOptions::default())?;
 
