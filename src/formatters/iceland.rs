@@ -3,6 +3,7 @@ use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use csv::WriterBuilder;
 use serde::Serialize;
+use std::collections::HashMap;
 
 use super::Formatter;
 
@@ -45,11 +46,11 @@ impl Formatter for IcelandFormatter {
         // TODO: card_scheme name and number, first six and last four.
         for transaction in transactions {
             let iceland_tx = IcelandTransaction {
-                first_six: "123456".to_owned(),
-                last_four: "4444".to_owned(),
+                first_six: transaction.first_six,
+                last_four: transaction.last_four,
                 expiry: "01/80".to_owned(),
                 card_scheme_id: "6".to_owned(),
-                card_scheme_name: "Visa Debit".to_owned(),
+                card_scheme_name: card_type_name(transaction.payment_provider.as_str()),
                 identifier: transaction.identifier.clone(),
                 transaction_date: transaction.transaction_date.to_string(),
                 amount: to_pounds(transaction.amount),
@@ -66,6 +67,16 @@ impl Formatter for IcelandFormatter {
 
         Ok(data)
     }
+}
+
+fn card_type_name(payment_provider: &str) -> String {
+    let payment_provider_mapping = HashMap::from([
+        ("amex", "Amex"),
+        ("mastercard", "MasterCard/MasterCard One"),
+        ("visa", "Visa"),
+        ]);
+
+    format!("{}", payment_provider_mapping[payment_provider])
 }
 
 #[cfg(test)]
@@ -106,6 +117,6 @@ mod tests {
 
         let iceland_tx = IcelandFormatter::format(test_transactions).unwrap();
 
-        assert_eq!(iceland_tx.len(), 519);
+        assert_eq!(iceland_tx.len(), 507);
     }
 }
