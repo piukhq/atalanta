@@ -4,6 +4,7 @@ use color_eyre::Result;
 use csv::Writer;
 use rand::Rng;
 use serde::Serialize;
+use std::collections::HashMap;
 
 use super::Formatter;
 
@@ -34,17 +35,17 @@ impl Formatter for WasabiFormatter {
             let wasabi_tx = WasabiTransaction {
                 store_no: "A076".to_owned(),
                 entry_no: "16277".to_owned(),
-                transaction_no: "123456789".to_owned(),
+                transaction_no: transaction.transaction_id,
                 tender_type: "3".to_owned(),
                 amount: to_pounds(transaction.amount),
                 card_number: format!("{}******{}", transaction.first_six, transaction.last_four),
-                card_type_name: transaction.payment_provider.clone(),
+                card_type_name: card_type_name(transaction.payment_provider.as_str()),
                 auth_code: transaction.auth_code.clone(),
                 authorization_ok: "1".to_owned(),
                 date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
                 time: transaction.transaction_date.format("%H-%M-%S").to_string(),
                 eft_merchant_no: transaction.identifier.clone(),
-                receipt_no: padded_random_int(12, 13),
+                receipt_no: format!("0000A{}", padded_random_int(13, 14)),
             };
 
             wtr.serialize(wasabi_tx)?;
@@ -60,6 +61,16 @@ fn padded_random_int(raise_power: u32, num_chars: u32) -> String {
     format!("{:0num_chars$}", number, num_chars = num_chars as usize)
 }
 
+fn card_type_name(payment_provider: &str) -> String {
+    let payment_provider_mapping = HashMap::from([
+        ("amex", "American Express"),
+        ("mastercard", "Mastercard"),
+        ("visa", "Visa"),
+        ]);
+
+    format!("{}", payment_provider_mapping[payment_provider])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -67,8 +78,8 @@ mod tests {
 
     #[test]
     fn test_padded_random_int() {
-        let value = padded_random_int(12, 13);
-        assert_eq!(value.len(), 13);
+        let value = padded_random_int(13, 14);
+        assert_eq!(value.len(), 14);
     }
 
     #[test]
