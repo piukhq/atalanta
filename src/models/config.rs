@@ -12,6 +12,7 @@ pub struct TransactorConfig {
 pub struct DistributorConfig {
     pub provider_slug: String,
     pub routing_key: String,
+    pub batch_size: usize,
 
     pub sender: SenderConfig,
 }
