@@ -1,6 +1,6 @@
 use amiquip::Connection;
 use atalanta::consumers::{start_consuming, BatchConsumer, DelayConsumer, InstantConsumer};
-use atalanta::senders::{APISender, AmexSender, SFTPSender};
+use atalanta::senders::{APISender, AmexSender, SFTPSender, BlobSender};
 use chrono::Duration;
 use color_eyre::{eyre::eyre, Result};
 
@@ -52,7 +52,7 @@ fn start_distributor(config: DistributorConfig) -> Result<()> {
                 config: config.clone(),
                 channel,
             };
-            let sender = SFTPSender::try_from(config.sender)?;
+            let sender = BlobSender::try_from(config.sender)?;
             start_consuming::<_, IcelandFormatter, _>(consumer, sender)?;
         }
         "visa-auth" => {

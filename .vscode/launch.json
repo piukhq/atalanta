@@ -20,7 +20,7 @@
                 }
             },
             "env": {
-                "CONFIG_PATH": "configs/wasabi-club.toml"
+                "CONFIG_PATH": "configs/iceland-bonus-card.toml"
             },
             "args": [],
             "cwd": "${workspaceFolder}"
@@ -41,7 +41,7 @@
                 }
             },
             "env": {
-                "CONFIG_PATH": "configs/visa-settlement.toml",
+                "CONFIG_PATH": "configs/iceland-bonus-card.toml",
                 "AMEX_CLIENT_ID": "client_id",
                 "AMEX_CLIENT_SECRET": "client_secret"
             },
