@@ -1,4 +1,4 @@
-provider_slug = "visa-settlement"
+provider_slug = "visa-auth"
 routing_key = "transactions.visa.*"
 batch_size = 1
 
