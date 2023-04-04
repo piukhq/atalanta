@@ -34,6 +34,8 @@ pub struct APISenderConfig {
 pub struct SFTPSenderConfig {
     pub host: String,
     pub port: u16,
+    pub username: String,
+    pub upload_path: String,
 }
 
 #[derive(serde::Deserialize, Clone)]
