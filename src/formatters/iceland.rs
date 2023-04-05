@@ -3,7 +3,6 @@ use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use csv::WriterBuilder;
 use serde::Serialize;
-use std::collections::HashMap;
 
 use super::Formatter;
 
@@ -70,13 +69,12 @@ impl Formatter for IcelandFormatter {
 }
 
 fn card_type_name(payment_provider: &str) -> String {
-    let payment_provider_mapping = HashMap::from([
-        ("amex", "Amex"),
-        ("mastercard", "MasterCard/MasterCard One"),
-        ("visa", "Visa"),
-        ]);
-
-    format!("{}", payment_provider_mapping[payment_provider])
+    match payment_provider {
+        "amex" => "Amex".to_owned(),
+        "mastercard" => "MasterCard/MasterCard One".to_owned(),
+        "visa" => "Visa".to_owned(),
+        _ => "Unknown".to_owned(),
+    }
 }
 
 #[cfg(test)]
@@ -85,7 +83,7 @@ mod tests {
     use chrono::Utc;
 
     #[test]
-    fn iceland_transaction_valid() {
+    fn iceland_transaction_valid() -> Result<()> {
         let dt = Utc::now();
 
         let test_transactions = vec![
@@ -115,8 +113,10 @@ mod tests {
             },
         ];
 
-        let iceland_tx = IcelandFormatter::format(test_transactions).unwrap();
+        let iceland_tx = IcelandFormatter::format(test_transactions)?;
 
         assert_eq!(iceland_tx.len(), 507);
+
+        Ok(())
     }
 }

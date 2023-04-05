@@ -122,7 +122,7 @@ mod tests {
     }
 
     #[test]
-    fn visa_auth_valid() {
+    fn visa_auth_valid() -> Result<()> {
         let dt = Utc::now();
         let test_transaction = Transaction {
             amount: 245,
@@ -139,7 +139,7 @@ mod tests {
 
         let json_result = VisaAuthFormatter::format(vec![test_transaction]);
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&json_result.unwrap()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&json_result?)?,
             json!({
                 "CardId": "test_tran",
                 "ExternalUserId": "98765432123456789",
@@ -176,5 +176,7 @@ mod tests {
                     "UserProfileId": "f292f99d-babf-528a-8d8a-19fa5f14f4"
             })
         );
+
+        Ok(())
     }
 }
