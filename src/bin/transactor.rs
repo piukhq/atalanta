@@ -119,7 +119,7 @@ fn transaction_producer(
             &config_data,
             &payment_provider,
             &payment_details,
-            &identifier_details
+            &identifier_details,
         )?;
 
         debug!(?tx);
