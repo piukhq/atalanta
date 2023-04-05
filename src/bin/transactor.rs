@@ -196,7 +196,7 @@ fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
 
 fn create_auth_code() -> Result<String> {
     let number = rand::thread_rng().gen_range(9..1000000);
-    return Ok(format!("{:0>6}", number));
+    Ok(format!("{:0>6}", number))
 }
 
 fn connect_to_local_queue() -> Result<Connection> {
