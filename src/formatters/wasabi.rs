@@ -4,7 +4,6 @@ use color_eyre::Result;
 use csv::Writer;
 use rand::Rng;
 use serde::Serialize;
-use std::collections::HashMap;
 
 use super::Formatter;
 
@@ -62,13 +61,12 @@ fn padded_random_int(raise_power: u32, num_chars: u32) -> String {
 }
 
 fn card_type_name(payment_provider: &str) -> String {
-    let payment_provider_mapping = HashMap::from([
-        ("amex", "American Express"),
-        ("mastercard", "Mastercard"),
-        ("visa", "Visa"),
-        ]);
-
-    format!("{}", payment_provider_mapping[payment_provider])
+    match payment_provider {
+        "amex" => "American Express".to_owned(),
+        "mastercard" => "Mastercard".to_owned(),
+        "visa" => "Visa".to_owned(),
+        _ => "Unknown".to_owned(),
+    }
 }
 
 #[cfg(test)]
@@ -83,7 +81,7 @@ mod tests {
     }
 
     #[test]
-    fn wasabi_transaction_valid() {
+    fn wasabi_transaction_valid() -> Result<()> {
         let dt = Utc::now();
 
         let test_transactions = vec![
@@ -113,9 +111,11 @@ mod tests {
             },
         ];
 
-        let wasabi_tx = WasabiFormatter::format(test_transactions).unwrap();
+        let wasabi_tx = WasabiFormatter::format(test_transactions)?;
 
         // 1 header, 2 transactions, 1 newline
         assert_eq!(wasabi_tx.split('\n').count(), 4);
+
+        Ok(())
     }
 }

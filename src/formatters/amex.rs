@@ -75,7 +75,7 @@ mod tests {
     }
 
     #[test]
-    fn amex_auth_valid() {
+    fn amex_auth_valid() -> Result<()> {
         let dt = Utc::now();
         let test_transaction = Transaction {
             amount: 245,
@@ -91,7 +91,8 @@ mod tests {
         };
 
         let json_result = AmexAuthFormatter::format(vec![test_transaction]);
-        let mst_timezone = FixedOffset::west_opt(7 * 60 * 60).unwrap();
+        let mst_timezone = FixedOffset::west_opt(7 * 60 * 60)
+            .ok_or_else(|| eyre!("failed to create MST timezone"))?;
         let auth_tx_json = json!({
             "transaction_id": "test_transaction_id_1",
             "offer_id": "test_transaction_id_1",
@@ -103,13 +104,15 @@ mod tests {
         });
 
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&json_result.unwrap()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&json_result?)?,
             auth_tx_json
         );
+
+        Ok(())
     }
 
     #[test]
-    fn amex_settlement_valid() {
+    fn amex_settlement_valid() -> Result<()> {
         let dt = Utc::now();
         let test_transaction = Transaction {
             amount: 245,
@@ -140,8 +143,10 @@ mod tests {
         });
 
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&json_result.unwrap()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&json_result?)?,
             settlement_tx_json
         );
+
+        Ok(())
     }
 }

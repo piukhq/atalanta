@@ -10,28 +10,27 @@ pub struct CostaFormatter;
 
 impl Formatter for CostaFormatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
-        let mut costa_transactions = json!([]);
+        let costa_transactions = transactions
+            .into_iter()
+            .map(|transaction| {
+                json!({
+                    "transaction_id": transaction.transaction_id,
+                    "payment_card_type": transaction.payment_provider,
+                    "payment_card_first_six": transaction.first_six,
+                    "payment_card_last_four": transaction.last_four,
+                    "amount": to_pounds(transaction.amount),
+                    "currency_code": "GBP",
+                    "auth_code": transaction.auth_code,
+                    "date": transaction.transaction_date,
+                    "merchant_identifier": transaction.identifier,
+                    "retailer_location_id": transaction.auth_code,
+                    "metadata": include_str!("costa_metadata.json"),
+                    "items_ordered": include_str!("costa_order_items.json")
+                })
+            })
+            .collect::<Vec<_>>();
 
-        for transaction in transactions {
-            let tx = json!({
-                "transaction_id": transaction.transaction_id,
-                "payment_card_type": transaction.payment_provider,
-                "payment_card_first_six": transaction.first_six,
-                "payment_card_last_four": transaction.last_four,
-                "amount": to_pounds(transaction.amount),
-                "currency_code": "GBP",
-                "auth_code": transaction.auth_code,
-                "date": transaction.transaction_date,
-                "merchant_identifier": transaction.identifier,
-                "retailer_location_id": transaction.auth_code,
-                "metadata": include_str!("costa_metadata.json"),
-                "items_ordered": include_str!("costa_order_items.json")
-            });
-
-            costa_transactions.as_array_mut().unwrap().push(tx);
-        }
-
-        Ok(costa_transactions.to_string())
+        Ok(serde_json::to_string(&costa_transactions)?)
     }
 }
 
@@ -42,9 +41,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn costa_valid() {
+    fn costa_valid() -> Result<()> {
         let dt = Utc::now();
-        let test_transactions =  vec![
+        let test_transactions = vec![
             Transaction {
                 amount: 245,
                 transaction_date: dt,
@@ -69,7 +68,6 @@ mod tests {
                 first_six: "123456".to_owned(),
                 last_four: "7890".to_owned(),
             },
-
         ];
 
         let json_result = CostaFormatter::format(test_transactions);
@@ -105,8 +103,10 @@ mod tests {
         ]);
 
         assert_eq!(
-            serde_json::from_str::<serde_json::Value>(&json_result.unwrap()).unwrap(),
+            serde_json::from_str::<serde_json::Value>(&json_result?)?,
             expected_costa_tx_json
         );
+
+        Ok(())
     }
 }

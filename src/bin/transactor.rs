@@ -228,8 +228,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn create_auth_code_success() {
-        let auth_code = create_auth_code().unwrap();
+    fn create_auth_code_success() -> Result<()> {
+        let auth_code = create_auth_code()?;
         assert_eq!(auth_code.len(), 6);
+        Ok(())
     }
 }
