@@ -18,6 +18,6 @@ COPY . .
 RUN cargo build --release
 
 # minimal runtime image
-FROM debian:11-slim AS runtime
+FROM ubuntu:22.04 AS runtime
 WORKDIR /app
 COPY --from=builder /app/target/release/transactor /app/target/release/distributor /usr/local/bin/
