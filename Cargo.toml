@@ -23,7 +23,7 @@ rust_decimal = "1.28.1"
 rust_decimal_macros = "1.28.1"
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.93"
-ssh2 = "0.9.4"
+ssh2 = { version = "0.9.4", features = ["vendored-openssl"] }
 tokio = { version = "1.26.0", features = ["macros"] }
 toml = "0.7.1"
 tracing = "0.1.37"
