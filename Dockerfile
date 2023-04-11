@@ -24,6 +24,11 @@ RUN cargo build --release
 # minimal runtime image
 FROM ubuntu:22.04 AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/transactor /app/target/release/distributor /app/linkerd-await /usr/local/bin/
+
+COPY --from=builder \
+  /app/target/release/transactor \
+  /app/target/release/distributor \
+  /app/linkerd-await \
+  /usr/local/bin/
 
 ENTRYPOINT [ "linkerd-await", "--" ]
