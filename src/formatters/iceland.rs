@@ -51,7 +51,10 @@ impl Formatter for IcelandFormatter {
                 card_scheme_id: "6".to_owned(),
                 card_scheme_name: card_type_name(transaction.payment_provider.as_str()),
                 identifier: transaction.identifier.clone(),
-                transaction_date: transaction.transaction_date.to_string(),
+                transaction_date: transaction
+                    .transaction_date
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string(),
                 amount: to_pounds(transaction.amount),
                 amount_unit: "GBP".to_owned(),
                 cashback_value: ".00".to_owned(),
@@ -115,7 +118,7 @@ mod tests {
 
         let iceland_tx = IcelandFormatter::format(test_transactions)?;
 
-        assert_eq!(iceland_tx.len(), 507);
+        assert_eq!(iceland_tx.len(), 485);
 
         Ok(())
     }
