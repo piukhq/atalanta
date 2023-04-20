@@ -26,15 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: [tests]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: echo "container_tag=$(date +'%FT%H%M%SZ')" >> $GITHUB_ENV
         id: date
-      - uses: docker/login-action@v1
+      - uses: docker/login-action@v2
         with:
           registry: binkcore.azurecr.io
           username: binkcore
           password: ${{ secrets.ACR_BINKCORE_PASSWORD }}
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v4
         with:
           context: .
           cache-from: type=gha
