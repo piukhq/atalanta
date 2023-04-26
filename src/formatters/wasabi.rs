@@ -9,18 +9,31 @@ use super::Formatter;
 
 #[derive(Serialize)]
 pub struct WasabiTransaction {
+    #[serde(rename = "Store No_")]
     pub store_no: String,
+    #[serde(rename = "Entry No_")]
     pub entry_no: String,
+    #[serde(rename = "Transaction No_")]
     pub transaction_no: String,
+    #[serde(rename = "Tender Type")]
     pub tender_type: String,
+    #[serde(rename = "Amount")]
     pub amount: String,
+    #[serde(rename = "Card Number")]
     pub card_number: String,
+    #[serde(rename = "Card Type Name")]
     pub card_type_name: String,
+    #[serde(rename = "Auth_code")]
     pub auth_code: String,
+    #[serde(rename = "Authorisation Ok")]
     pub authorization_ok: String,
+    #[serde(rename = "Date")]
     pub date: String,
+    #[serde(rename = "Time")]
     pub time: String,
+    #[serde(rename = "EFT Merchant No_")]
     pub eft_merchant_no: String,
+    #[serde(rename = "Receipt No_")]
     pub receipt_no: String,
 }
 
