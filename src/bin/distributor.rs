@@ -1,13 +1,13 @@
 use amiquip::Connection;
 use atalanta::consumers::{start_consuming, BatchConsumer, DelayConsumer, InstantConsumer};
-use atalanta::senders::{APISender, AmexSender, SFTPSender, BlobSender};
+use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender};
 use chrono::Duration;
 use color_eyre::{eyre::eyre, Result};
 
 use atalanta::configuration::{load_distributor_config, load_settings};
 use atalanta::formatters::*;
 use atalanta::initialise::startup;
-use atalanta::models::DistributorConfig;
+use atalanta::models::{DistributorConfig, Settings};
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -18,15 +18,15 @@ fn main() -> Result<()> {
 
     info!(config.provider_slug, "distributing transactions");
 
-    start_distributor(config)?;
+    start_distributor(config, settings)?;
 
     Ok(())
 }
 
-fn start_distributor(config: DistributorConfig) -> Result<()> {
+fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()> {
     // Create rabbitmq connection and channel
     // Open connection.
-    let mut connection = Connection::insecure_open("amqp://localhost:5672")?;
+    let mut connection = Connection::insecure_open(&settings.amqp_dsn)?;
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
 

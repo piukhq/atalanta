@@ -1,4 +1,6 @@
-use amiquip::{Connection, Exchange, Publish, Result};
+use amiquip::{Connection, Exchange, Publish};
+use atalanta::configuration::load_settings;
+use color_eyre::Result;
 use tracing::{debug, info};
 
 #[tracing::instrument(ret)]
@@ -8,9 +10,11 @@ fn main() -> Result<()> {
         .with_target(false)
         .init();
 
+    let settings = load_settings()?;
+
     debug!("Starting connection to rabbitmq");
     // Open connection.
-    let mut connection = Connection::insecure_open("amqp://localhost:5672")?;
+    let mut connection = Connection::insecure_open(&settings.amqp_dsn)?;
 
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
@@ -21,5 +25,7 @@ fn main() -> Result<()> {
     // Publish a message to the "hello" queue.
     exchange.publish(Publish::new("hello there".as_bytes(), "hello"))?;
     info!("Message published");
-    connection.close()
+    connection.close()?;
+
+    Ok(())
 }
