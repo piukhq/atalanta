@@ -83,14 +83,10 @@ fn transaction_producer(
 
     let mut tx: Transaction;
 
-    let mut queue_connection;
-    if settings.environment == "LOCAL" {
-        queue_connection = connect_to_local_queue()?;
-    } else {
-        queue_connection = connect_to_live_queue()?;
-    }
+    let mut connection = connect_to_amqp(settings)?;
+
     // Open a channel - None says let the library choose the channel ID.
-    let channel = queue_connection.open_channel(None)?;
+    let channel = connection.open_channel(None)?;
 
     // Get a handle to the direct exchange on our channel.
     // let exchange = Exchange::direct(&channel);
@@ -199,17 +195,12 @@ fn create_auth_code() -> Result<String> {
     Ok(format!("{:0>6}", number))
 }
 
-fn connect_to_local_queue() -> Result<Connection> {
-    // Open insecure connection for local testing only.
-    let connection = Connection::insecure_open("amqp://localhost:5672")?;
-
-    Ok(connection)
-}
-
-fn connect_to_live_queue() -> Result<Connection> {
-    let connection = Connection::open("amqp://localhost:5672")?;
-
-    Ok(connection)
+fn connect_to_amqp(settings: Settings) -> Result<Connection> {
+    if settings.environment == "LOCAL" {
+        Ok(Connection::insecure_open(&settings.amqp_dsn)?)
+    } else {
+        Ok(Connection::open(&settings.amqp_dsn)?)
+    }
 }
 
 fn queue_transaction(

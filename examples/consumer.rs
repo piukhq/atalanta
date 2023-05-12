@@ -1,11 +1,14 @@
 // Port of https://www.rabbitmq.com/tutorials/tutorial-one-python.html. Run this
 // in one shell, and run the hello_world_publish example in another.
-use amiquip::{Connection, ConsumerMessage, ConsumerOptions, QueueDeclareOptions, Result};
-use atalanta::models::Transaction;
+use amiquip::{Connection, ConsumerMessage, ConsumerOptions, QueueDeclareOptions};
+use atalanta::{configuration::load_settings, models::Transaction};
+use color_eyre::Result;
 
 fn main() -> Result<()> {
+    let settings = load_settings()?;
+
     // Open connection.
-    let mut connection = Connection::insecure_open("amqp://localhost:5672")?;
+    let mut connection = Connection::insecure_open(&settings.amqp_dsn)?;
 
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
@@ -31,5 +34,7 @@ fn main() -> Result<()> {
         }
     }
 
-    connection.close()
+    connection.close()?;
+
+    Ok(())
 }
