@@ -8,6 +8,7 @@ use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::Rng;
 use std::fs::File;
+use std::path::Path;
 use std::time;
 use tracing::debug;
 use tracing::info;
@@ -24,19 +25,22 @@ fn main() -> Result<()> {
     let settings = load_settings()?;
     let config = load_transactor_config(&settings)?;
 
-    let payment_card_tokens = load_payment_card_tokens(&config.provider_slug)?;
-    let identifiers = load_retailer_identifiers(&config.provider_slug)?;
+    let payment_card_tokens =
+        load_payment_card_tokens(&config.provider_slug, &settings.tokens_file_path)?;
+    let identifiers = load_retailer_identifiers(&config.provider_slug, &settings.mids_file_path)?;
 
     transaction_producer(config, settings, payment_card_tokens, identifiers)
 }
 
-fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>> {
+fn load_payment_card_tokens(
+    merchant_slug: &String,
+    tokens_file_path: &Path,
+) -> Result<Vec<StringRecord>> {
     // Load token and slugs derived from the Hermes database
     //Only tokens related to the current retailer are loaded
     let mut tokens = Vec::new();
 
-    let file_path = "./files/hermes_tokens.csv";
-    let file = File::open(file_path)?;
+    let file = File::open(tokens_file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_reader(file);
@@ -51,12 +55,14 @@ fn load_payment_card_tokens(merchant_slug: &String) -> Result<Vec<StringRecord>>
     Ok(tokens)
 }
 
-fn load_retailer_identifiers(merchant_slug: &String) -> Result<Vec<StringRecord>> {
+fn load_retailer_identifiers(
+    merchant_slug: &String,
+    mids_file_path: &Path,
+) -> Result<Vec<StringRecord>> {
     //Only identifiers related to the current retailer are loaded
     let mut identifiers = Vec::new();
 
-    let file_path = "./files/perf_mids.csv";
-    let file = File::open(file_path)?;
+    let file = File::open(mids_file_path)?;
     let mut rdr = csv::ReaderBuilder::new()
         .has_headers(false)
         .from_reader(file);
