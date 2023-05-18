@@ -33,7 +33,7 @@ fn main() -> Result<()> {
 }
 
 fn load_payment_card_tokens(
-    merchant_slug: &String,
+    retailer_slug: &String,
     tokens_file_path: &Path,
 ) -> Result<Vec<StringRecord>> {
     // Load token and slugs derived from the Hermes database
@@ -47,10 +47,16 @@ fn load_payment_card_tokens(
 
     for result in rdr.records() {
         let record = result?;
-        if record.iter().any(|field| field == merchant_slug) {
+        if record.iter().any(|field| field == retailer_slug) {
             tokens.push(record);
         }
     }
+
+    info!(
+        "loaded {} tokens from {} for retailer {retailer_slug}",
+        tokens.len(),
+        tokens_file_path.display()
+    );
 
     Ok(tokens)
 }
