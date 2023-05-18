@@ -56,7 +56,7 @@ fn load_payment_card_tokens(
 }
 
 fn load_retailer_identifiers(
-    merchant_slug: &String,
+    retailer_slug: &String,
     mids_file_path: &Path,
 ) -> Result<Vec<StringRecord>> {
     //Only identifiers related to the current retailer are loaded
@@ -69,10 +69,16 @@ fn load_retailer_identifiers(
 
     for result in rdr.records() {
         let record = result?;
-        if record.iter().any(|field| field == merchant_slug) {
+        if record.iter().any(|field| field == retailer_slug) {
             identifiers.push(record);
         }
     }
+
+    info!(
+        "loaded {} identifiers from {} for retailer {retailer_slug}",
+        identifiers.len(),
+        mids_file_path.display()
+    );
 
     Ok(identifiers)
 }
