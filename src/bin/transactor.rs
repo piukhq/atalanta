@@ -3,10 +3,10 @@
 use amiquip::{Connection, Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
 use chrono::Utc;
 use color_eyre::{eyre::eyre, Result};
-use csv::StringRecord;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::Rng;
+use serde::Deserialize;
 use std::fs::File;
 use std::path::Path;
 use std::time;
@@ -29,13 +29,22 @@ fn main() -> Result<()> {
         load_payment_card_tokens(&config.provider_slug, &settings.tokens_file_path)?;
     let identifiers = load_retailer_identifiers(&config.provider_slug, &settings.mids_file_path)?;
 
-    transaction_producer(config, settings, payment_card_tokens, identifiers)
+    transaction_producer(config, settings, &payment_card_tokens, &identifiers)
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenRecord {
+    token: String,
+    retailer_slug: String,
+    first_six: String,
+    last_four: String,
+    payment_slug: String,
 }
 
 fn load_payment_card_tokens(
-    retailer_slug: &String,
+    retailer_slug: &str,
     tokens_file_path: &Path,
-) -> Result<Vec<StringRecord>> {
+) -> Result<Vec<TokenRecord>> {
     // Load token and slugs derived from the Hermes database
     //Only tokens related to the current retailer are loaded
     let mut tokens = Vec::new();
@@ -45,9 +54,9 @@ fn load_payment_card_tokens(
         .has_headers(false)
         .from_reader(file);
 
-    for result in rdr.records() {
-        let record = result?;
-        if record.iter().any(|field| field == retailer_slug) {
+    for result in rdr.deserialize() {
+        let record: TokenRecord = result?;
+        if record.retailer_slug == retailer_slug {
             tokens.push(record);
         }
     }
@@ -61,10 +70,30 @@ fn load_payment_card_tokens(
     Ok(tokens)
 }
 
+#[derive(Debug, Deserialize)]
+enum IdentifierType {
+    #[serde(rename = "PRIMARY")]
+    PrimaryMID,
+    #[serde(rename = "SECONDARY")]
+    SecondaryMID,
+    #[serde(rename = "PSIMI")]
+    Psimi,
+}
+
+#[derive(Debug, Deserialize)]
+struct IdentifierRecord {
+    retailer_slug: String,
+    payment_slug: String,
+    identifier: String,
+    _identifier_type: IdentifierType,
+    _location_id: Option<String>,
+    _merchant_internal_id: Option<String>,
+}
+
 fn load_retailer_identifiers(
-    retailer_slug: &String,
+    retailer_slug: &str,
     mids_file_path: &Path,
-) -> Result<Vec<StringRecord>> {
+) -> Result<Vec<IdentifierRecord>> {
     //Only identifiers related to the current retailer are loaded
     let mut identifiers = Vec::new();
 
@@ -73,9 +102,9 @@ fn load_retailer_identifiers(
         .has_headers(false)
         .from_reader(file);
 
-    for result in rdr.records() {
-        let record = result?;
-        if record.iter().any(|field| field == retailer_slug) {
+    for result in rdr.deserialize() {
+        let record: IdentifierRecord = result?;
+        if record.retailer_slug == retailer_slug {
             identifiers.push(record);
         }
     }
@@ -92,8 +121,8 @@ fn load_retailer_identifiers(
 fn transaction_producer(
     config_data: TransactorConfig,
     settings: Settings,
-    payment_card_tokens: Vec<StringRecord>,
-    identifiers: Vec<StringRecord>,
+    payment_card_tokens: &[TokenRecord],
+    identifiers: &[IdentifierRecord],
 ) -> Result<()> {
     //Manages the process of creating raw transactions
     let delay = time::Duration::from_millis(1000 / config_data.transactions_per_second);
@@ -125,10 +154,9 @@ fn transaction_producer(
 
         //Select a token to use for this payment provider, along with first six and last four
         //This could be an inefficient process since we have to look through a list of StringRecords
-        let payment_details =
-            select_payment_details(&payment_card_tokens, payment_provider.clone())?;
+        let payment_details = select_payment_details(payment_card_tokens, &payment_provider);
         let identifier_details =
-            select_identifiers_per_payment_provider(&identifiers, payment_provider.clone())?;
+            select_identifiers_per_payment_provider(identifiers, &payment_provider);
         tx = create_transaction(
             &config_data,
             &payment_provider,
@@ -143,41 +171,33 @@ fn transaction_producer(
     }
 }
 
-fn select_payment_details(
-    payment_card_tokens: &Vec<StringRecord>,
-    payment_provider: String,
-) -> Result<Vec<StringRecord>> {
-    let mut provider_list = Vec::new();
-    for item in payment_card_tokens {
-        if item[2] == payment_provider {
-            provider_list.push(item.clone());
-        }
-    }
-
-    Ok(provider_list)
+fn select_payment_details<'a>(
+    payment_card_tokens: &'a [TokenRecord],
+    payment_provider: &str,
+) -> Vec<&'a TokenRecord> {
+    payment_card_tokens
+        .iter()
+        .filter(|token| token.payment_slug == payment_provider)
+        .collect()
 }
 
 //Provided with a set of retailer specific identifier records
 //select a subset of identifiers based on the payment provider
-fn select_identifiers_per_payment_provider(
-    identifiers: &Vec<StringRecord>,
-    payment_provider: String,
-) -> Result<Vec<StringRecord>> {
-    let mut identifier_list = Vec::new();
-    for item in identifiers {
-        if item[1] == payment_provider {
-            identifier_list.push(item.clone());
-        }
-    }
-
-    Ok(identifier_list)
+fn select_identifiers_per_payment_provider<'a>(
+    identifiers: &'a [IdentifierRecord],
+    payment_provider: &str,
+) -> Vec<&'a IdentifierRecord> {
+    identifiers
+        .iter()
+        .filter(|identifier| identifier.payment_slug == payment_provider)
+        .collect()
 }
 
 fn create_transaction(
     config: &TransactorConfig,
-    payment_provider: &String,
-    payment_card_tokens: &Vec<StringRecord>,
-    identifiers: &Vec<StringRecord>,
+    payment_provider: &str,
+    payment_card_tokens: &[&TokenRecord],
+    identifiers: &[&IdentifierRecord],
 ) -> Result<Transaction> {
     let token = payment_card_tokens
         .choose(&mut rand::thread_rng())
@@ -194,10 +214,10 @@ fn create_transaction(
         merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
-        identifier: identifier[2].to_string(),
-        token: token[0].to_string(),
-        first_six: token[3].to_string(),
-        last_four: token[4].to_string(),
+        identifier: identifier.identifier.clone(),
+        token: token.token.clone(),
+        first_six: token.first_six.clone(),
+        last_four: token.last_four.clone(),
     })
 }
 

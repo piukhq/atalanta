@@ -1,114 +1,86 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug bin 'transactor'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=transactor",
-                    "--package=atalanta"
-                ],
-                "filter": {
-                    "name": "transactor",
-                    "kind": "bin"
-                }
-            },
-            "env": {
-                "CONFIG_PATH": "configs/iceland-bonus-card.toml"
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug bin 'distributor'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=distributor",
-                    "--package=atalanta"
-                ],
-                "filter": {
-                    "name": "distributor",
-                    "kind": "bin"
-                }
-            },
-            "env": {
-                "CONFIG_PATH": "configs/iceland-bonus-card.toml",
-                "AMEX_CLIENT_ID": "client_id",
-                "AMEX_CLIENT_SECRET": "client_secret"
-            },
-            "args": [
-                "visa-auth"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'atalanta'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=atalanta",
-                    "--package=atalanta"
-                ],
-                "filter": {
-                    "name": "atalanta",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug example dynamic",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--example=dynamic",
-                    "--package=atalanta"
-                ],
-                "filter": {
-                    "name": "dynamic",
-                    "kind": "example"
-                }
-            },
-            "args": [
-                "wasabi",
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug example hermes file reader",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--example=hermes_file_reader",
-                    "--package=atalanta"
-                ],
-                "filter": {
-                    "name": "hermes_file_reader",
-                    "kind": "example"
-                }
-            },
-            "args": [
-                "./files/hermes_tokens.csv",
-                "wasabi-club"
-            ],
-            "cwd": "${workspaceFolder}"
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug bin 'transactor'",
+      "cargo": {
+        "args": ["build", "--bin=transactor", "--package=atalanta"],
+        "filter": {
+          "name": "transactor",
+          "kind": "bin"
         }
-    ]
+      },
+      "env": {
+        "CONFIG_FILE_PATH": "configs/costa.toml"
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug bin 'distributor'",
+      "cargo": {
+        "args": ["build", "--bin=distributor", "--package=atalanta"],
+        "filter": {
+          "name": "distributor",
+          "kind": "bin"
+        }
+      },
+      "env": {
+        "CONFIG_FILE_PATH": "configs/iceland-bonus-card.toml",
+        "AMEX_CLIENT_ID": "client_id",
+        "AMEX_CLIENT_SECRET": "client_secret"
+      },
+      "args": ["visa-auth"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'atalanta'",
+      "cargo": {
+        "args": ["test", "--no-run", "--bin=atalanta", "--package=atalanta"],
+        "filter": {
+          "name": "atalanta",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example dynamic",
+      "cargo": {
+        "args": ["build", "--example=dynamic", "--package=atalanta"],
+        "filter": {
+          "name": "dynamic",
+          "kind": "example"
+        }
+      },
+      "args": ["wasabi"],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug example hermes file reader",
+      "cargo": {
+        "args": ["build", "--example=hermes_file_reader", "--package=atalanta"],
+        "filter": {
+          "name": "hermes_file_reader",
+          "kind": "example"
+        }
+      },
+      "args": ["./files/hermes_tokens.csv", "wasabi-club"],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
 }
