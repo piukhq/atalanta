@@ -164,7 +164,6 @@ fn transaction_producer(
             &identifier_details,
         )?;
 
-        debug!(?tx);
         queue_transaction(&exchange, tx, &routing_key)?;
 
         std::thread::sleep(delay);
