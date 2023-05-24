@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Transaction {
-    pub amount: i16,
+    pub amount: i64,
     pub transaction_date: DateTime<Utc>,
     pub payment_provider: String,
     pub merchant_name: String,
