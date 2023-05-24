@@ -13,8 +13,8 @@ pub use wasabi::WasabiFormatter;
 mod costa;
 pub use costa::CostaFormatter;
 
-pub fn to_pounds(amount: i16) -> String {
-    Decimal::new(amount as i64, 2).to_string()
+pub fn to_pounds(amount: i64) -> String {
+    Decimal::new(amount, 2).to_string()
 }
 
 pub trait Formatter {

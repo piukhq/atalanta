@@ -1,8 +1,8 @@
 #[derive(serde::Deserialize)]
 pub struct TransactorConfig {
     pub provider_slug: String,
-    pub amount_min: i16,
-    pub amount_max: i16,
+    pub amount_min: i64,
+    pub amount_max: i64,
     pub transactions_per_second: u64,
     pub percentage: [(String, i32); 3],
 }
