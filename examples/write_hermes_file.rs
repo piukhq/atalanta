@@ -9,7 +9,7 @@ use rand::Rng;
 fn write_to_file(path: &str) -> Result<()> {
     // Creates new `Writer` for `stdout`
     let mut writer = csv::Writer::from_path(path)?;
-    let merchant_slugs = vec!["wasabi-club", "iceland-bonus-card", "viator", "squaremeal"];
+    let merchant_slugs = vec!["wasabi-club", "iceland-bonus-card", "bpl-viator", "squaremeal"];
     let payment_slugs = vec!["visa", "amex", "mastercard"];
 
     // We don't explicitly write the header record
