@@ -27,8 +27,22 @@ pub enum SenderConfig {
 }
 
 #[derive(serde::Deserialize, Clone)]
+pub enum APISenderHeaderValue {
+    Literal(String),
+    Secret(PathBuf),
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct APISenderHeader {
+    pub name: String,
+    pub value: APISenderHeaderValue,
+}
+
+#[derive(serde::Deserialize, Clone)]
 pub struct APISenderConfig {
     pub url: String,
+    #[serde(default)]
+    pub headers: Vec<APISenderHeader>,
 }
 
 #[derive(serde::Deserialize, Clone)]
