@@ -17,8 +17,9 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: "clippy"
+      - uses: taiki-e/install-action@nextest
       - run: cargo clippy
-      - run: cargo test
+      - run: cargo nextest run
 
   release:
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
