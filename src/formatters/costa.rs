@@ -10,6 +10,8 @@ pub struct CostaFormatter;
 
 impl Formatter for CostaFormatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
+        let metadata: serde_json::Value =
+            serde_json::from_str(include_str!("costa_metadata.json"))?;
         let costa_transactions = transactions
             .into_iter()
             .map(|transaction| {
@@ -24,7 +26,7 @@ impl Formatter for CostaFormatter {
                     "date": transaction.transaction_date,
                     "merchant_identifier": transaction.identifier,
                     "retailer_location_id": transaction.auth_code,
-                    "metadata": include_str!("costa_metadata.json"),
+                    "metadata": metadata,
                     "items_ordered": include_str!("costa_order_items.json")
                 })
             })

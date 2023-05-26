@@ -2,12 +2,10 @@ use crate::models::{DistributorConfig, Settings, TransactorConfig};
 use color_eyre::{eyre::eyre, Result};
 use std::fs;
 use toml;
-use tracing::{debug, info};
+use tracing::info;
 
 pub fn load_transactor_config(settings: &Settings) -> Result<TransactorConfig> {
     info!(?settings.config_file_path, "reading transactor config");
-    let metadata = std::fs::metadata(&settings.config_file_path)?;
-    debug!(?metadata, "transactor config file");
     let contents = fs::read_to_string(&settings.config_file_path)?;
     toml::from_str(&contents).map_err(|e| {
         eyre!(
@@ -20,8 +18,6 @@ pub fn load_transactor_config(settings: &Settings) -> Result<TransactorConfig> {
 
 pub fn load_distributor_config(settings: &Settings) -> Result<DistributorConfig> {
     info!(?settings.config_file_path, "reading distributor config");
-    let metadata = std::fs::metadata(&settings.config_file_path)?;
-    debug!(?metadata, "distributor config file");
     let contents = fs::read_to_string(&settings.config_file_path)?;
     toml::from_str(&contents).map_err(|e| {
         eyre!(
