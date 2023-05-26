@@ -1,13 +1,12 @@
-use amiquip::Connection;
 use atalanta::consumers::{start_consuming, BatchConsumer, DelayConsumer, InstantConsumer};
 use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender};
 use chrono::Duration;
 use color_eyre::{eyre::eyre, Result};
 
 use atalanta::configuration::{load_distributor_config, load_settings};
-use atalanta::formatters::*;
 use atalanta::initialise::startup;
 use atalanta::models::{DistributorConfig, Settings};
+use atalanta::{amqp, formatters::*};
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -26,7 +25,8 @@ fn main() -> Result<()> {
 fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()> {
     // Create rabbitmq connection and channel
     // Open connection.
-    let mut connection = Connection::insecure_open(&settings.amqp_dsn)?;
+    let mut connection = amqp::connect(settings)?;
+
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
 

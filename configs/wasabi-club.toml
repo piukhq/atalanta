@@ -10,4 +10,5 @@ batch_size = 10000
 host = "sftp.gb.bink.com"
 port = 22
 username = "binktest_dev"
+key_file_path = "id_sftp_dev"
 upload_path = "uploads"

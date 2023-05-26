@@ -1,4 +1,8 @@
-use std::{io::Write, net::TcpStream, path::Path};
+use std::{
+    io::Write,
+    net::TcpStream,
+    path::{Path, PathBuf},
+};
 
 use crate::models::SenderConfig;
 
@@ -13,6 +17,7 @@ pub struct SFTPSender {
     pub host: String,
     pub port: u16,
     pub username: String,
+    pub key_file_path: PathBuf,
     pub upload_path: String,
 }
 
@@ -25,6 +30,7 @@ impl TryFrom<SenderConfig> for SFTPSender {
                 host: config.host,
                 port: config.port,
                 username: config.username,
+                key_file_path: config.key_file_path,
                 upload_path: config.upload_path,
             })
         } else {
@@ -36,8 +42,6 @@ impl TryFrom<SenderConfig> for SFTPSender {
 impl Sender for SFTPSender {
     fn send(&self, transactions: String) -> Result<()> {
         let mut sess = Session::new()?;
-        let mut agent = sess.agent()?;
-        agent.connect()?;
 
         debug!("Connecting to {}:{}...", self.host, self.port);
         let tcp = TcpStream::connect(format!("{}:{}", self.host, self.port))?;
@@ -46,15 +50,7 @@ impl Sender for SFTPSender {
         debug!("Handshaking");
         sess.handshake()?;
 
-        debug!("Trying identities");
-        agent.list_identities()?;
-        for identity in agent.identities()? {
-            debug!("Trying identity: {:?}", identity.comment());
-            if let Ok(()) = agent.userauth(&self.username, &identity) {
-                info!("Authenticated with identity: {:?}", identity.comment());
-                break;
-            }
-        }
+        sess.userauth_pubkey_file(&self.username, None, &self.key_file_path, None)?;
 
         if !sess.authenticated() {
             return Err(eyre!("None of the identities worked, cannot authenticate."));

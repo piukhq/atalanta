@@ -1,6 +1,7 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 
-use amiquip::{Connection, Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
+use amiquip::{Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
+use atalanta::amqp;
 use chrono::Utc;
 use color_eyre::{eyre::eyre, Result};
 use rand::distributions::WeightedIndex;
@@ -129,7 +130,7 @@ fn transaction_producer(
 
     let mut tx: Transaction;
 
-    let mut connection = connect_to_amqp(settings)?;
+    let mut connection = amqp::connect(settings)?;
 
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
@@ -229,14 +230,6 @@ fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
 fn create_auth_code() -> Result<String> {
     let number = rand::thread_rng().gen_range(9..1000000);
     Ok(format!("{:0>6}", number))
-}
-
-fn connect_to_amqp(settings: Settings) -> Result<Connection> {
-    if settings.environment == "LOCAL" {
-        Ok(Connection::insecure_open(&settings.amqp_dsn)?)
-    } else {
-        Ok(Connection::open(&settings.amqp_dsn)?)
-    }
 }
 
 fn queue_transaction(
