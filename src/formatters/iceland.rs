@@ -84,6 +84,7 @@ fn card_type_name(payment_provider: &str) -> String {
 mod tests {
     use super::*;
     use chrono::Utc;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn iceland_transaction_valid() -> Result<()> {

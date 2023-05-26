@@ -112,6 +112,7 @@ impl Formatter for VisaSettlementFormatter {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use pretty_assertions::assert_eq;
 
     use super::*;
 

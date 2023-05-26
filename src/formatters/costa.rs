@@ -39,6 +39,7 @@ impl Formatter for CostaFormatter {
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -74,19 +75,22 @@ mod tests {
 
         let json_result = CostaFormatter::format(test_transactions);
 
-        let expected_costa_tx_json = json!([{
-            "transaction_id": "test_transaction_id_1",
-            "payment_card_type": "visa",
-            "payment_card_first_six": "123456",
-            "payment_card_last_four": "7890",
-            "amount": to_pounds(245),
-            "currency_code": "GBP",
-            "auth_code": "123456",
-            "date": dt,
-            "merchant_identifier": "12345678",
-            "retailer_location_id": "123456",
-            "metadata": include_str!("costa_metadata.json"),
-            "items_ordered": include_str!("costa_order_items.json")
+        let metadata: serde_json::Value =
+            serde_json::from_str(include_str!("costa_metadata.json"))?;
+        let expected_costa_tx_json = json!([
+            {
+                "transaction_id": "test_transaction_id_1",
+                "payment_card_type": "visa",
+                "payment_card_first_six": "123456",
+                "payment_card_last_four": "7890",
+                "amount": to_pounds(245),
+                "currency_code": "GBP",
+                "auth_code": "123456",
+                "date": dt,
+                "merchant_identifier": "12345678",
+                "retailer_location_id": "123456",
+                "metadata": metadata,
+                "items_ordered": include_str!("costa_order_items.json")
             },
             {
                 "transaction_id": "test_transaction_id_2",
@@ -99,7 +103,7 @@ mod tests {
                 "date": dt,
                 "merchant_identifier": "87654321",
                 "retailer_location_id": "654321",
-                "metadata": include_str!("costa_metadata.json"),
+                "metadata": metadata,
                 "items_ordered": include_str!("costa_order_items.json")
             }
         ]);
