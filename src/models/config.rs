@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 #[derive(serde::Deserialize)]
 pub struct TransactorConfig {
     pub provider_slug: String,
@@ -34,6 +36,7 @@ pub struct SFTPSenderConfig {
     pub host: String,
     pub port: u16,
     pub username: String,
+    pub key_file_path: PathBuf,
     pub upload_path: String,
 }
 
