@@ -38,7 +38,7 @@ pub async fn send_to_blob_storage(content: String, credentials: &BlobCredentials
 
 #[tokio::main]
 pub async fn file_from_blob_storage(container: String, credentials: &BlobCredentials) -> Result<()> {
-
+    println!("TODO, get files from blob storage: {}", container);
     let storage_credentials =
         StorageCredentials::Key(credentials.account.to_owned(), credentials.access_key.to_owned());
     let blob_client = ClientBuilder::new(&credentials.account, storage_credentials)

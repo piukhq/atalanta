@@ -17,12 +17,13 @@ impl Formatter for VisaAuthFormatter {
             .ok_or_else(|| eyre!("Expected at least one transaction."))?;
 
         let amount = to_pounds(transaction.amount);
+        let date = transaction.transaction_date.to_rfc3339();
         let auth = json!({
             "CardId": transaction.transaction_id[0..9],
             "ExternalUserId": transaction.token,
             "MessageElementsCollection": [
                 {"Key": "Transaction.BillingAmount", "Value": amount},
-                {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
+                {"Key": "Transaction.TimeStampYYMMDD", "Value": date},
                 {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
                 {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
                 {"Key": "Transaction.TransactionAmount", "Value": amount},
@@ -43,7 +44,7 @@ impl Formatter for VisaAuthFormatter {
                 {"Key": "Transaction.MerchantLocalPurchaseDate ", "Value": "2019-12-19"},
                 {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
                 {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
-                {"Key": "Transaction.MerchantDateTimeGMT ", "Value": "2019-12-19T23:40:00"},
+                {"Key": "Transaction.MerchantDateTimeGMT ", "Value": date},
                 {"Key": "Transaction.AuthCode", "Value": transaction.auth_code},
                 {"Key": "Transaction.PanLastFour", "Value": transaction.last_four},
             ],
@@ -67,13 +68,14 @@ impl Formatter for VisaSettlementFormatter {
             .ok_or_else(|| eyre!("Expected at least one transaction."))?;
 
         let amount = to_pounds(transaction.amount);
+        let date = transaction.transaction_date.to_rfc3339();
         let settlement = json!(
             {
                 "CardId": transaction.transaction_id[0..9],
                 "ExternalUserId": transaction.token,
                 "MessageElementsCollection": [
                     {"Key": "Transaction.BillingAmount", "Value": amount},
-                    {"Key": "Transaction.TimeStampYYMMDD", "Value": transaction.transaction_date.to_string()},
+                    {"Key": "Transaction.TimeStampYYMMDD", "Value": date},
                     {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
                     {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
                     {"Key": "Transaction.TransactionAmount", "Value": amount},
@@ -94,7 +96,7 @@ impl Formatter for VisaSettlementFormatter {
                     {"Key": "Transaction.MerchantLocalPurchaseDate", "Value": "2019-12-19"},
                     {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
                     {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
-                    {"Key": "Transaction.MerchantDateTimeGMT", "Value": transaction.transaction_date.to_string()},
+                    {"Key": "Transaction.MerchantDateTimeGMT", "Value": date},
                     {"Key": "Transaction.AuthCode", "Value": transaction.auth_code},
                     {"Key": "Transaction.PanLastFour", "Value": transaction.last_four},
                 ],
@@ -146,7 +148,7 @@ mod tests {
                 "ExternalUserId": "98765432123456789",
                 "MessageElementsCollection": [
                     {"Key": "Transaction.BillingAmount", "Value": "2.45"},
-                    {"Key": "Transaction.TimeStampYYMMDD", "Value": dt.to_string()},
+                    {"Key": "Transaction.TimeStampYYMMDD", "Value": dt.to_rfc3339()},
                     {"Key": "Transaction.MerchantCardAcceptorId", "Value": "12345678"},
                     {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
                     {"Key": "Transaction.TransactionAmount", "Value": "2.45"},
@@ -167,7 +169,7 @@ mod tests {
                     {"Key": "Transaction.MerchantLocalPurchaseDate ", "Value": "2019-12-19"},
                     {"Key": "Transaction.MerchantGroup.0.Name", "Value": "TEST_MG"},
                     {"Key": "Transaction.MerchantGroup.0.ExternalId", "Value": "MYSTORE"},
-                    {"Key": "Transaction.MerchantDateTimeGMT ", "Value": "2019-12-19T23:40:00"},
+                    {"Key": "Transaction.MerchantDateTimeGMT ", "Value": dt.to_rfc3339()},
                     {"Key": "Transaction.AuthCode", "Value": "123456"},
                     {"Key": "Transaction.PanLastFour", "Value": "7890"},
                     ],
