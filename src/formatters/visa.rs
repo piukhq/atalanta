@@ -24,14 +24,14 @@ impl Formatter for VisaAuthFormatter {
             "MessageElementsCollection": [
                 {"Key": "Transaction.BillingAmount", "Value": amount},
                 {"Key": "Transaction.TimeStampYYMMDD", "Value": date},
-                {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
+                {"Key": "Transaction.MerchantCardAcceptorId", "Value": primary_identifier(&transaction)},
                 {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
                 {"Key": "Transaction.TransactionAmount", "Value": amount},
                 {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
                 {"Key": "Transaction.VisaMerchantName", "Value": transaction.merchant_name},
-                {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
+                {"Key": "Transaction.VisaMerchantId", "Value": psimi_identifier(&transaction)},
                 {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
-                {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
+                {"Key": "Transaction.VisaStoreId", "Value": secondary_identifier(&transaction)},
                 {"Key": "Transaction.SettlementDate", "Value": ""},
                 {"Key": "Transaction.SettlementAmount", "Value": 0},
                 {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 0},
@@ -76,14 +76,14 @@ impl Formatter for VisaSettlementFormatter {
                 "MessageElementsCollection": [
                     {"Key": "Transaction.BillingAmount", "Value": amount},
                     {"Key": "Transaction.TimeStampYYMMDD", "Value": date},
-                    {"Key": "Transaction.MerchantCardAcceptorId", "Value": transaction.identifier},
+                    {"Key": "Transaction.MerchantCardAcceptorId", "Value": primary_identifier(&transaction)},
                     {"Key": "Transaction.MerchantAcquirerBin", "Value": "3423432"},
                     {"Key": "Transaction.TransactionAmount", "Value": amount},
                     {"Key": "Transaction.VipTransactionId", "Value": transaction.transaction_id},
                     {"Key": "Transaction.VisaMerchantName", "Value": transaction.merchant_name},
-                    {"Key": "Transaction.VisaMerchantId", "Value": transaction.identifier},
+                    {"Key": "Transaction.VisaMerchantId", "Value": psimi_identifier(&transaction)},
                     {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
-                    {"Key": "Transaction.VisaStoreId", "Value": transaction.identifier},
+                    {"Key": "Transaction.VisaStoreId", "Value": secondary_identifier(&transaction)},
                     {"Key": "Transaction.SettlementDate", "Value": Utc::now()},
                     {"Key": "Transaction.SettlementAmount", "Value": amount},
                     {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 826},
@@ -111,6 +111,26 @@ impl Formatter for VisaSettlementFormatter {
     }
 }
 
+fn primary_identifier(transaction: &Transaction) -> String{
+    match transaction.identifier_type.as_str() {
+        "PRIMARY" => transaction.identifier.to_owned(),
+        _ => "PRIM11111".to_owned()
+    }
+}
+
+fn secondary_identifier(transaction: &Transaction) -> String{
+    match transaction.identifier_type.as_str() {
+        "SECONDARY" => transaction.identifier.to_owned(),
+        _ => "SEC222222".to_owned()
+    }
+}
+
+fn psimi_identifier(transaction: &Transaction) -> String{
+    match transaction.identifier_type.as_str() {
+        "PSIMI" => transaction.identifier.to_owned(),
+        _ => "PSIMI3333".to_owned()
+    }
+}
 #[cfg(test)]
 mod tests {
     use chrono::Utc;
@@ -135,6 +155,7 @@ mod tests {
             transaction_id: "test_transaction_id_1".to_owned(),
             auth_code: "123456".to_owned(),
             identifier: "12345678".to_owned(),
+            identifier_type: "PRIMARY".to_owned(),
             token: "98765432123456789".to_owned(),
             first_six: "123456".to_owned(),
             last_four: "7890".to_owned(),
@@ -154,9 +175,9 @@ mod tests {
                     {"Key": "Transaction.TransactionAmount", "Value": "2.45"},
                     {"Key": "Transaction.VipTransactionId", "Value": "test_transaction_id_1"},
                     {"Key": "Transaction.VisaMerchantName", "Value": "Bink Shop"},
-                    {"Key": "Transaction.VisaMerchantId", "Value": "12345678"},
+                    {"Key": "Transaction.VisaMerchantId", "Value": "PSIMI3333"},
                     {"Key": "Transaction.VisaStoreName", "Value": "Bink Shop"},
-                    {"Key": "Transaction.VisaStoreId", "Value": "12345678"},
+                    {"Key": "Transaction.VisaStoreId", "Value": "SEC222222"},
                     {"Key": "Transaction.SettlementDate", "Value": ""},
                     {"Key": "Transaction.SettlementAmount", "Value": 0},
                     {"Key": "Transaction.SettlementCurrencyCodeNumeric", "Value": 0},

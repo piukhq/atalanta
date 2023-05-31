@@ -7,10 +7,10 @@ use color_eyre::{eyre::eyre, Result};
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use rand::Rng;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::Path;
-use std::time;
+use std::{time, fmt};
 use tracing::info;
 use uuid::Uuid;
 
@@ -70,7 +70,7 @@ fn load_payment_card_tokens(
     Ok(tokens)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 enum IdentifierType {
     #[serde(rename = "PRIMARY")]
     PrimaryMID,
@@ -78,6 +78,12 @@ enum IdentifierType {
     SecondaryMID,
     #[serde(rename = "PSIMI")]
     Psimi,
+}
+
+impl fmt::Display for IdentifierType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::to_string(self).unwrap())
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -214,6 +220,7 @@ fn create_transaction(
         transaction_id: Uuid::new_v4().to_string(),
         auth_code: create_auth_code()?,
         identifier: identifier.identifier.clone(),
+        identifier_type: identifier._identifier_type.to_string(),
         token: token.token.clone(),
         first_six: token.first_six.clone(),
         last_four: token.last_four.clone(),
@@ -253,5 +260,59 @@ mod tests {
         let auth_code = create_auth_code()?;
         assert_eq!(auth_code.len(), 6);
         Ok(())
+    }
+
+    #[test]
+    fn create_transaction_success() -> Result<()> {
+        let transactor_config = TransactorConfig{
+            provider_slug: "test_slug".to_string(),
+            amount_min: 10,
+            amount_max: 100,
+            transactions_per_second: 1,
+            percentage: [("visa".to_string(), 100), ("mastercard".to_string(), 0), ("amex".to_string(), 0)]
+        };
+
+        let token_record = [&TokenRecord {
+            token: "test_token".to_string(),
+            retailer_slug: "wasabi_club".to_string(),
+            first_six: "666666".to_string(),
+            last_four: "4444".to_string(),
+            payment_slug: "visa".to_string(),
+        },];
+
+        let identifier_records = [&IdentifierRecord {
+            retailer_slug: "wasabi_club".to_string(),
+            payment_slug: "visa".to_string(),
+            identifier: "123456789".to_string(),
+            _identifier_type: IdentifierType::PrimaryMID,
+            _location_id: Some("loc_id_123456".to_string()),
+            _merchant_internal_id: Some("mi_1234567".to_string()),
+        }];
+
+        let expected_transaction = Transaction {
+            amount: 2000,
+            transaction_date: Utc::now(),
+            payment_provider: "visa".to_string(),
+            merchant_name: "wasabi-club".to_string(),
+            transaction_id: Uuid::new_v4().to_string(),
+            auth_code: "123456".to_string(),
+            identifier: identifier_records[0].identifier.clone(),
+            identifier_type: identifier_records[0]._identifier_type.to_string(),
+            token: token_record[0].token.clone(),
+            first_six: token_record[0].first_six.clone(),
+            last_four: token_record[0].last_four.clone(),
+        };
+
+        let test_transaction = create_transaction(
+            &transactor_config,
+            "visa",
+            &token_record,
+            &identifier_records,
+        )?;
+        assert_eq!(test_transaction.identifier,  expected_transaction.identifier);
+        assert_eq!(test_transaction.identifier_type,  r#""PRIMARY""#);
+
+        Ok(())
+
     }
 }
