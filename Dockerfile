@@ -19,7 +19,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 
 # build the actual application
 COPY . .
-RUN cargo build --release
+RUN cargo build --features vendored-openssl --release
 
 # minimal runtime image
 FROM ubuntu:22.04 AS runtime
