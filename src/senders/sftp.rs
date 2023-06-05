@@ -64,7 +64,10 @@ impl Sender for SFTPSender {
         debug!("Opening SFTP session");
         let sftp = sess.sftp()?;
 
-        let filename = Uuid::new_v4().to_string();
+        let mut filename = Uuid::new_v4().to_string();
+        let ext = ".csv".to_string();
+
+        filename = format!("{}{}", filename, ext);
         let path = Path::new(&self.upload_path).join(filename);
         debug!("Uploading {}", path.to_string_lossy());
         let mut file = sftp.create(&path)?;
