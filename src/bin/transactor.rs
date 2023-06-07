@@ -10,7 +10,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::path::Path;
-use std::{time, fmt};
+use std::time;
 use tracing::info;
 use uuid::Uuid;
 
@@ -80,9 +80,13 @@ enum IdentifierType {
     Psimi,
 }
 
-impl fmt::Display for IdentifierType {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", serde_json::to_string(self).unwrap())
+impl ToString for IdentifierType {
+    fn to_string(&self) -> String {
+        match self {
+            IdentifierType::PrimaryMID => "PRIMARY".to_owned(),
+            IdentifierType::SecondaryMID => "SECONDARY".to_owned(),
+            IdentifierType::Psimi => "PSIMI".to_owned(),
+        }
     }
 }
 
@@ -310,7 +314,7 @@ mod tests {
             &identifier_records,
         )?;
         assert_eq!(test_transaction.identifier,  expected_transaction.identifier);
-        assert_eq!(test_transaction.identifier_type,  r#""PRIMARY""#);
+        assert_eq!(test_transaction.identifier_type,  "PRIMARY");
 
         Ok(())
 
