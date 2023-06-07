@@ -54,8 +54,8 @@ impl Formatter for WasabiFormatter {
                 card_type_name: card_type_name(transaction.payment_provider.as_str()),
                 auth_code: transaction.auth_code.clone(),
                 authorization_ok: "1".to_owned(),
-                date: transaction.transaction_date.format("%Y-%m-%d").to_string(),
-                time: transaction.transaction_date.format("%H-%M-%S").to_string(),
+                date: transaction.transaction_date.format("%d/%m/%Y").to_string(),
+                time: transaction.transaction_date.format("%H:%M:%S").to_string(),
                 eft_merchant_no: transaction.identifier.clone(),
                 receipt_no: format!("0000A{}", padded_random_int(13, 14)),
             };
