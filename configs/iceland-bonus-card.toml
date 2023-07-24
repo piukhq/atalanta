@@ -8,5 +8,5 @@ batch_size = 10000
 
 [sender.Blob]
 account = "uksouthdev374l"
-access_key = "M8iVOIx63od4XOEJqngA1ayVt7bQ0lbKGmuQ0g+XLr0OCKb6671g08Z7PToR56gtpw7PRWGxXDK7+AStA4u8ZA=="
+access_key = "get_key_from_azure"
 container = "harmonia-imports-test/iceland"
