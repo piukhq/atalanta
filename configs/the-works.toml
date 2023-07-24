@@ -1,0 +1,5 @@
+transactions_per_second = 1
+provider_slug = "the-works"
+amount_min = 100
+amount_max = 50000
+percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]

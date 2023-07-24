@@ -3,4 +3,4 @@ routing_key = "transactions.visa.*"
 batch_size = 1
 
 [sender.API]
-url = "http://localhost:6502/mock/auth_transactions/visa"
+url = "http://192.168.2.5:9090/auth_transactions/visa"
