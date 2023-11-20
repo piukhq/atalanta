@@ -20,7 +20,7 @@
         }
       },
       "env": {
-        "CONFIG_FILE_PATH": "configs/iceland-bonus-card.toml"
+        "CONFIG_FILE_PATH": "configs/costa.toml"
       },
       "args": [],
       "cwd": "${workspaceFolder}"
@@ -41,7 +41,7 @@
         }
       },
       "env": {
-        "CONFIG_FILE_PATH": "configs/iceland-bonus-card.toml",
+        "CONFIG_FILE_PATH": "configs/costa.toml",
         "AMEX_CLIENT_ID": "client_id",
         "AMEX_CLIENT_SECRET": "client_secret"
       },
