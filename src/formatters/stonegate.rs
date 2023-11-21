@@ -17,7 +17,7 @@ impl Formatter for StonegateFormatter {
             .map(|transaction| {
                 json!({
                     "transaction_id": transaction.transaction_id,
-                    "payment_card_type": transaction.payment_provider,
+                    "payment_card_type": card_type_name(transaction.payment_provider.as_str()),
                     "payment_card_first_six": transaction.first_six,
                     "payment_card_last_four": transaction.last_four,
                     "amount": to_pounds(transaction.amount),
@@ -33,6 +33,15 @@ impl Formatter for StonegateFormatter {
             .collect::<Vec<_>>();
 
         Ok(serde_json::to_string(&stonegate_transactions)?)
+    }
+}
+
+fn card_type_name(payment_provider: &str) -> String {
+    match payment_provider {
+        "amex" => "AMEX CREDIT".to_owned(),
+        "mastercard" => "DEBIT MASTERCARD".to_owned(),
+        "visa" => "VISA DEBIT".to_owned(),
+        _ => "Unknown".to_owned(),
     }
 }
 
