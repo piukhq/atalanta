@@ -1,6 +1,7 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::{formatters::to_pounds, models::Transaction};
 use chrono_tz::Europe::London;
+use chrono::{Duration,};
 use chrono::prelude::*;
 use color_eyre::Result;
 use csv::WriterBuilder;

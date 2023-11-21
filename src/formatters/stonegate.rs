@@ -27,7 +27,7 @@ impl Formatter for StonegateFormatter {
                     "merchant_identifier": transaction.identifier,
                     "retailer_location_id": transaction.auth_code,
                     "metadata": metadata,
-                    "items_ordered": include_str!("costa_order_items.json")
+                    "items_ordered": include_str!("stonegate_order_items.json")
                 })
             })
             .collect::<Vec<_>>();
@@ -91,7 +91,7 @@ mod tests {
         let expected_stonegate_tx_json = json!([
             {
                 "transaction_id": "test_transaction_id_1",
-                "payment_card_type": "visa",
+                "payment_card_type": "VISA DEBIT",
                 "payment_card_first_six": "123456",
                 "payment_card_last_four": "7890",
                 "amount": to_pounds(245),
@@ -105,7 +105,7 @@ mod tests {
             },
             {
                 "transaction_id": "test_transaction_id_2",
-                "payment_card_type": "visa",
+                "payment_card_type": "VISA DEBIT",
                 "payment_card_first_six": "123456",
                 "payment_card_last_four": "7890",
                 "amount": to_pounds(735),
