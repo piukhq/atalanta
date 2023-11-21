@@ -1,0 +1,13 @@
+transactions_per_second = 28
+provider_slug = "stonegate"
+routing_key = "transactions.*.stonegate"
+amount_min = 300
+amount_max = 1000
+percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]
+batch_size = 1
+
+[sender.API]
+url = "http://0.0.0.0:8001/retailers/stonegate/transactions"
+[[sender.API.headers]]
+name = "X-API-Key"
+value.Secret = "files/boreas-api-key"
