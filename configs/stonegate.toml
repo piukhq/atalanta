@@ -10,4 +10,4 @@ batch_size = 1
 url = "http://0.0.0.0:8001/retailers/stonegate/transactions"
 [[sender.API.headers]]
 name = "X-API-Key"
-value.Secret = "files/boreas-api-key"
+value.Secret = "files/stonegate-transactions-api-key"
