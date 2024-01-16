@@ -111,24 +111,24 @@ impl Formatter for VisaSettlementFormatter {
     }
 }
 
-fn primary_identifier(transaction: &Transaction) -> String{
+fn primary_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
         "PRIMARY" => transaction.identifier.to_owned(),
-        _ => "PRIM11111".to_owned()
+        _ => "PRIM11111".to_owned(),
     }
 }
 
-fn secondary_identifier(transaction: &Transaction) -> String{
+fn secondary_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
         "SECONDARY" => transaction.identifier.to_owned(),
-        _ => "SEC222222".to_owned()
+        _ => "SEC222222".to_owned(),
     }
 }
 
-fn psimi_identifier(transaction: &Transaction) -> String{
+fn psimi_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
         "PSIMI" => transaction.identifier.to_owned(),
-        _ => "PSIMI3333".to_owned()
+        _ => "PSIMI3333".to_owned(),
     }
 }
 #[cfg(test)]

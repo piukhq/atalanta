@@ -20,7 +20,7 @@
         }
       },
       "env": {
-        "CONFIG_FILE_PATH": "configs/iceland-bonus-card.toml"
+        "CONFIG_FILE_PATH": "configs/stonegate.toml"
       },
       "args": [],
       "cwd": "${workspaceFolder}"
@@ -28,7 +28,7 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug iceland distributor",
+      "name": "Debug stonegate distributor",
       "cargo": {
         "args": [
           "build",
@@ -41,7 +41,7 @@
         }
       },
       "env": {
-        "CONFIG_FILE_PATH": "configs/iceland-bonus-card.toml",
+        "CONFIG_FILE_PATH": "configs/stonegate.toml",
         "AMEX_CLIENT_ID": "client_id",
         "AMEX_CLIENT_SECRET": "client_secret"
       },

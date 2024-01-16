@@ -12,6 +12,8 @@ mod wasabi;
 pub use wasabi::WasabiFormatter;
 mod costa;
 pub use costa::CostaFormatter;
+mod stonegate;
+pub use stonegate::StonegateFormatter;
 
 pub fn to_pounds(amount: i64) -> String {
     Decimal::new(amount, 2).to_string()
