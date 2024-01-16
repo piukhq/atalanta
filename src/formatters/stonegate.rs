@@ -99,7 +99,7 @@ mod tests {
                 "auth_code": "123456",
                 "date": dt.to_rfc3339(),
                 "merchant_identifier": "12345678",
-                "retailer_location_id": "123456",
+                "retailer_location_id": "12345678",
                 "metadata": metadata,
                 "items_ordered": include_str!("stonegate_order_items.json")
             },
@@ -113,7 +113,7 @@ mod tests {
                 "auth_code": "654321",
                 "date": dt.to_rfc3339(),
                 "merchant_identifier": "87654321",
-                "retailer_location_id": "654321",
+                "retailer_location_id": "87654321",
                 "metadata": metadata,
                 "items_ordered": include_str!("stonegate_order_items.json")
             }
