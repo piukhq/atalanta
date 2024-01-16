@@ -1,8 +1,7 @@
 #![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::{formatters::to_pounds, models::Transaction};
-use chrono_tz::Europe::London;
-use chrono::{Duration,};
 use chrono::prelude::*;
+use chrono_tz::Europe::London;
 use color_eyre::Result;
 use csv::WriterBuilder;
 use serde::Serialize;
@@ -88,7 +87,7 @@ fn date_to_timezone(date: &DateTime<Utc>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Utc;
+    use chrono::{Duration, Utc};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -136,15 +135,16 @@ mod tests {
         // All transaction dates and times are generated as UTC. Therefore we
         // need to make datetimes created during summer months for Iceland to be aware of daylight savings.
         // Check the time changes across a daylight savings change
-        let naivedatetime_utc = NaiveDate::from_ymd_opt(2016, 10, 29).unwrap().and_hms_opt(12, 0, 0).unwrap();
+        let naivedatetime_utc = NaiveDate::from_ymd_opt(2016, 10, 29)
+            .unwrap()
+            .and_hms_opt(12, 0, 0)
+            .unwrap();
         let datetime_utc = DateTime::<Utc>::from_utc(naivedatetime_utc, Utc);
 
         let day_later = datetime_utc + Duration::hours(24); // same datetime 24 hours later in GMT/UTC
-
 
         assert_eq!("2016-10-29 13:00:00", date_to_timezone(&datetime_utc));
         assert_eq!("2016-10-30 12:00:00", date_to_timezone(&day_later));
         Ok(())
     }
-
 }

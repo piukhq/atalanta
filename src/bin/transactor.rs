@@ -178,6 +178,8 @@ fn transaction_producer(
 
         std::thread::sleep(delay);
     }
+
+    Ok(())
 }
 
 fn select_payment_details<'a>(
@@ -268,12 +270,16 @@ mod tests {
 
     #[test]
     fn create_transaction_success() -> Result<()> {
-        let transactor_config = TransactorConfig{
+        let transactor_config = TransactorConfig {
             provider_slug: "test_slug".to_string(),
             amount_min: 10,
             amount_max: 100,
             transactions_per_second: 1,
-            percentage: [("visa".to_string(), 100), ("mastercard".to_string(), 0), ("amex".to_string(), 0)]
+            percentage: [
+                ("visa".to_string(), 100),
+                ("mastercard".to_string(), 0),
+                ("amex".to_string(), 0),
+            ],
         };
 
         let token_record = [&TokenRecord {
@@ -282,7 +288,7 @@ mod tests {
             first_six: "666666".to_string(),
             last_four: "4444".to_string(),
             payment_slug: "visa".to_string(),
-        },];
+        }];
 
         let identifier_records = [&IdentifierRecord {
             retailer_slug: "wasabi_club".to_string(),
@@ -313,10 +319,9 @@ mod tests {
             &token_record,
             &identifier_records,
         )?;
-        assert_eq!(test_transaction.identifier,  expected_transaction.identifier);
-        assert_eq!(test_transaction.identifier_type,  "PRIMARY");
+        assert_eq!(test_transaction.identifier, expected_transaction.identifier);
+        assert_eq!(test_transaction.identifier_type, "PRIMARY");
 
         Ok(())
-
     }
 }

@@ -1,11 +1,14 @@
-use crate::{services::blob::{BlobCredentials, send_to_blob_storage}, models::SenderConfig};
+use crate::{
+    models::SenderConfig,
+    services::blob::{send_to_blob_storage, BlobCredentials},
+};
 
 use super::Sender;
 use color_eyre::{eyre::eyre, Result};
 
 /// A struct that can send messages to a blob storage.
 pub struct BlobSender {
-    pub blob_credentials: BlobCredentials
+    pub blob_credentials: BlobCredentials,
 }
 
 impl TryFrom<SenderConfig> for BlobSender {
@@ -18,7 +21,7 @@ impl TryFrom<SenderConfig> for BlobSender {
                     config.account,
                     config.access_key,
                     config.container,
-                )
+                ),
             }),
             _ => Err(eyre!("Invalid sender config type, expected BLOB")),
         }
@@ -27,11 +30,7 @@ impl TryFrom<SenderConfig> for BlobSender {
 
 impl Sender for BlobSender {
     fn send(&self, transactions: String) -> Result<()> {
-
-        send_to_blob_storage(
-            transactions,
-            &self.blob_credentials
-        )?;
+        send_to_blob_storage(transactions, &self.blob_credentials)?;
         Ok(())
     }
 }

@@ -25,7 +25,7 @@ impl Formatter for StonegateFormatter {
                     "auth_code": transaction.auth_code,
                     "date": transaction.transaction_date.to_rfc3339(),
                     "merchant_identifier": transaction.identifier,
-                    "retailer_location_id": transaction.auth_code,
+                    "retailer_location_id": transaction.identifier,
                     "metadata": metadata,
                     "items_ordered": include_str!("stonegate_order_items.json")
                 })
