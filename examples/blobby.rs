@@ -12,7 +12,7 @@ async fn send_to_blob_storage(data: String) -> Result<()> {
     let container: String = "harmonia-imports-test/wasabi".to_owned();
     let blob_name: String = "wasabi".to_owned();
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_client =
         ClientBuilder::new(account, storage_credentials).blob_client(&container, blob_name);
 
