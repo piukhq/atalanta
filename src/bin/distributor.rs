@@ -54,7 +54,7 @@ fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()
                 config: config.clone(),
                 channel,
             };
-            let sender = APISender::try_from(config.sender)?;
+            let sender = BlobSender::try_from(config.sender)?;
             start_consuming::<_, TGIFridaysFormatter, _>(consumer, sender)?;
         }
         "wasabi-club" => {

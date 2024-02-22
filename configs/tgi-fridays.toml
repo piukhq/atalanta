@@ -1,0 +1,12 @@
+transactions_per_second = 28
+provider_slug = "tgi-fridays"
+routing_key = "transactions.*.tgi-fridays"
+amount_min = 300
+amount_max = 1000
+percentage = [['visa', 100], ['mastercard', 0], ['amex', 0]]
+batch_size = 1
+
+[sender.Blob]
+account = "uksouthdev374l"
+access_key = "get_key_from_azure"
+container = "harmonia-imports-test/tgi-fridays"
