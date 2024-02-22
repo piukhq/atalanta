@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use atalanta::consumers::{start_consuming, BatchConsumer, DelayConsumer, InstantConsumer};
 use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender};
 use chrono::Duration;

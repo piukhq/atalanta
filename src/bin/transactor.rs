@@ -178,8 +178,6 @@ fn transaction_producer(
 
         std::thread::sleep(delay);
     }
-
-    Ok(())
 }
 
 fn select_payment_details<'a>(
