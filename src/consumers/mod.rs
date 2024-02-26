@@ -17,6 +17,10 @@ use crate::{
 };
 
 pub trait Consumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self;
+    fn new_with_delay(config: DistributorConfig, channel: Channel, delay: chrono::Duration)
+        -> Self;
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>;

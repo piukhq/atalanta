@@ -14,6 +14,18 @@ pub struct BatchConsumer {
 }
 
 impl Consumer for BatchConsumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self {
+        Self { channel, config }
+    }
+
+    fn new_with_delay(
+        config: DistributorConfig,
+        channel: Channel,
+        _delay: chrono::Duration,
+    ) -> Self {
+        Self { channel, config }
+    }
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,

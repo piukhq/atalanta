@@ -1,5 +1,7 @@
-use atalanta::consumers::{start_consuming, BatchConsumer, DelayConsumer, InstantConsumer};
-use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender};
+use atalanta::consumers::{
+    start_consuming, BatchConsumer, Consumer, DelayConsumer, InstantConsumer,
+};
+use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender, Sender};
 use chrono::Duration;
 use color_eyre::{eyre::eyre, Result};
 
@@ -22,85 +24,75 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()> {
-    // Create rabbitmq connection and channel
-    // Open connection.
-    let mut connection = amqp::connect(settings)?;
+fn create_consumer<C: Consumer>(
+    config: DistributorConfig,
+    channel: amiquip::Channel,
+    delay: Option<Duration>,
+) -> C {
+    match delay {
+        Some(delay) => C::new_with_delay(config, channel, delay),
+        None => C::new(config, channel),
+    }
+}
 
-    // Open a channel - None says let the library choose the channel ID.
+fn init_and_start_consuming<C, F, S>(
+    settings: Settings,
+    config: DistributorConfig,
+    delay: Option<Duration>,
+) -> Result<()>
+where
+    C: Consumer,
+    F: Formatter,
+    S: Sender,
+{
+    let mut connection = amqp::connect(&settings)?;
     let channel = connection.open_channel(None)?;
 
-    match config.provider_slug.as_str() {
-        "costa" => {
-            let consumer = InstantConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = APISender::try_from(config.sender)?;
-            start_consuming::<_, CostaFormatter, _>(consumer, sender)?;
-        }
-        "stonegate" => {
-            let consumer = InstantConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = APISender::try_from(config.sender)?;
-            start_consuming::<_, StonegateFormatter, _>(consumer, sender)?;
-        }
-        "tgi-fridays" => {
-            let consumer = InstantConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = BlobSender::try_from(config.sender)?;
-            start_consuming::<_, TGIFridaysFormatter, _>(consumer, sender)?;
-        }
-        "wasabi-club" => {
-            let consumer = BatchConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = SFTPSender::try_from(config.sender)?;
-            start_consuming::<_, WasabiFormatter, _>(consumer, sender)?;
-        }
-        "iceland-bonus-card" => {
-            let consumer = BatchConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = BlobSender::try_from(config.sender)?;
-            start_consuming::<_, IcelandFormatter, _>(consumer, sender)?;
-        }
-        "visa-auth" => {
-            let consumer = InstantConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = APISender::try_from(config.sender)?;
-            start_consuming::<_, VisaAuthFormatter, _>(consumer, sender)?;
-        }
-        "visa-settlement" => {
-            let consumer = DelayConsumer {
-                config: config.clone(),
-                channel,
-                delay: Duration::seconds(10),
-            };
-            let sender = APISender::try_from(config.sender)?;
-            start_consuming::<_, VisaSettlementFormatter, _>(consumer, sender)?;
-        }
-        "amex-auth" => {
-            let consumer = InstantConsumer {
-                config: config.clone(),
-                channel,
-            };
-            let sender = AmexSender::try_from(config.sender)?;
-            start_consuming::<_, AmexAuthFormatter, _>(consumer, sender)?;
-        }
+    let consumer = create_consumer::<C>(config.clone(), channel, delay);
+    let sender =
+        S::try_from(config.sender).map_err(|_| eyre!("failed to create sender from config"))?;
 
-        _ => return Err(eyre!("No process available for {}", config.provider_slug)),
-    }
+    start_consuming::<C, F, S>(consumer, sender)?;
 
     connection.close()?;
+
+    Ok(())
+}
+
+fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()> {
+    match config.provider_slug.as_str() {
+        "costa" => init_and_start_consuming::<InstantConsumer, CostaFormatter, APISender>(
+            settings, config, None,
+        )?,
+        "stonegate" => init_and_start_consuming::<InstantConsumer, StonegateFormatter, APISender>(
+            settings, config, None,
+        )?,
+        "tgi-fridays" => {
+            init_and_start_consuming::<InstantConsumer, TGIFridaysFormatter, BlobSender>(
+                settings, config, None,
+            )?
+        }
+        "wasabi-club" => init_and_start_consuming::<BatchConsumer, WasabiFormatter, SFTPSender>(
+            settings, config, None,
+        )?,
+        "iceland-bonus-card" => {
+            init_and_start_consuming::<BatchConsumer, IcelandFormatter, BlobSender>(
+                settings, config, None,
+            )?
+        }
+        "visa-auth" => init_and_start_consuming::<InstantConsumer, VisaAuthFormatter, APISender>(
+            settings, config, None,
+        )?,
+        "visa-settlement" => init_and_start_consuming::<
+            DelayConsumer,
+            VisaSettlementFormatter,
+            APISender,
+        >(settings, config, Some(Duration::seconds(10)))?,
+        "amex-auth" => init_and_start_consuming::<InstantConsumer, AmexAuthFormatter, AmexSender>(
+            settings, config, None,
+        )?,
+        _ => return Err(eyre!("No process available for {}", config.provider_slug)),
+    }
 
     Ok(())
 }

@@ -12,6 +12,8 @@ pub use sftp::SFTPSender;
 
 use color_eyre::Result;
 
-pub trait Sender {
+use crate::models::SenderConfig;
+
+pub trait Sender: TryFrom<SenderConfig> {
     fn send(&self, transactions: String) -> Result<()>;
 }

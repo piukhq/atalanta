@@ -17,6 +17,18 @@ pub struct InstantConsumer {
 }
 
 impl Consumer for InstantConsumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self {
+        Self { config, channel }
+    }
+
+    fn new_with_delay(
+        config: DistributorConfig,
+        channel: Channel,
+        _delay: chrono::Duration,
+    ) -> Self {
+        Self { config, channel }
+    }
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,

@@ -22,6 +22,22 @@ pub struct DelayConsumer {
 }
 
 impl Consumer for DelayConsumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self {
+        Self {
+            config,
+            channel,
+            delay: Duration::seconds(0),
+        }
+    }
+
+    fn new_with_delay(config: DistributorConfig, channel: Channel, delay: Duration) -> Self {
+        Self {
+            config,
+            channel,
+            delay,
+        }
+    }
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,

@@ -140,7 +140,7 @@ fn transaction_producer(
 
     let mut tx: Transaction;
 
-    let mut connection = amqp::connect(settings)?;
+    let mut connection = amqp::connect(&settings)?;
 
     // Open a channel - None says let the library choose the channel ID.
     let channel = connection.open_channel(None)?;
