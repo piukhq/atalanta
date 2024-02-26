@@ -1,19 +1,15 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-
 use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use serde_json::json;
 
-use super::Formatter;
-
-pub struct TGIFridaysFormatter;
+pub struct Formatter;
 
 fn gratuitise(amount: i64) -> (i64, i64) {
     let gratuity = (amount as f64 * 0.1).round() as i64;
     (amount - gratuity, gratuity)
 }
 
-impl Formatter for TGIFridaysFormatter {
+impl super::Formatter for Formatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let tgi_fridays_transactions = transactions
             .into_iter()
@@ -53,6 +49,8 @@ mod tests {
     use chrono::Utc;
     use pretty_assertions::assert_eq;
 
+    use crate::formatters::Formatter as _;
+
     use super::*;
 
     #[test]
@@ -87,7 +85,7 @@ mod tests {
             },
         ];
 
-        let json_result = TGIFridaysFormatter::format(test_transactions);
+        let json_result = Formatter::format(test_transactions);
         let expected_tgi_fridays_tx_json = json!([
             {
                 "transaction_id": "test_transaction_id_1",

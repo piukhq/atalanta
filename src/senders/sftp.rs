@@ -6,27 +6,26 @@ use std::{
 
 use crate::models::SenderConfig;
 
-use super::Sender;
 use color_eyre::{eyre::eyre, Result};
 use ssh2::Session;
-use tracing::{debug, info};
+use tracing::debug;
 use uuid::Uuid;
 
 /// A struct that can send messages via SFTP.
-pub struct SFTPSender {
+pub struct Sender {
     pub host: String,
     pub port: u16,
     pub username: String,
     pub key_file_path: PathBuf,
-    pub upload_path: String,
+    pub upload_path: PathBuf,
 }
 
-impl TryFrom<SenderConfig> for SFTPSender {
+impl TryFrom<SenderConfig> for Sender {
     type Error = color_eyre::Report;
 
     fn try_from(value: SenderConfig) -> Result<Self> {
         if let SenderConfig::SFTP(config) = value {
-            Ok(SFTPSender {
+            Ok(Self {
                 host: config.host,
                 port: config.port,
                 username: config.username,
@@ -39,44 +38,29 @@ impl TryFrom<SenderConfig> for SFTPSender {
     }
 }
 
-impl Sender for SFTPSender {
+fn write_file(sftp: &ssh2::Sftp, path: &Path, content: &str) -> Result<()> {
+    let filename = format!("{}.csv", Uuid::new_v4());
+    let path = path.join(filename);
+    debug!("Uploading {}", path.to_string_lossy());
+    let mut file = sftp.create(&path)?;
+
+    debug!("Writing transactions to file");
+    write!(file, "{content}")?;
+
+    Ok(())
+}
+
+impl super::Sender for Sender {
     fn send(&self, transactions: String) -> Result<()> {
         let mut sess = Session::new()?;
-
-        debug!("Connecting to {}:{}...", self.host, self.port);
-        let tcp = TcpStream::connect(format!("{}:{}", self.host, self.port))?;
-        sess.set_tcp_stream(tcp);
-
-        debug!("Handshaking");
+        sess.set_tcp_stream(TcpStream::connect(format!("{}:{}", self.host, self.port))?);
         sess.handshake()?;
-
         sess.userauth_pubkey_file(&self.username, None, &self.key_file_path, None)?;
-
         if !sess.authenticated() {
             return Err(eyre!("None of the identities worked, cannot authenticate."));
         }
-
-        info!(
-            "Connected to {}:{} as {}",
-            self.host, self.port, self.username
-        );
-
-        debug!("Opening SFTP session");
         let sftp = sess.sftp()?;
-
-        let mut filename = Uuid::new_v4().to_string();
-        let ext = ".csv".to_string();
-
-        filename = format!("{}{}", filename, ext);
-        let path = Path::new(&self.upload_path).join(filename);
-        debug!("Uploading {}", path.to_string_lossy());
-        let mut file = sftp.create(&path)?;
-
-        debug!("Writing transactions to file");
-        write!(file, "{}", transactions)?;
-
-        info!("Transactions sent successfully");
-
+        write_file(&sftp, Path::new(&self.upload_path), &transactions)?;
         Ok(())
     }
 }

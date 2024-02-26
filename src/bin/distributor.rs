@@ -1,14 +1,10 @@
-use atalanta::consumers::{
-    start_consuming, BatchConsumer, Consumer, DelayConsumer, InstantConsumer,
-};
-use atalanta::senders::{APISender, AmexSender, BlobSender, SFTPSender, Sender};
 use chrono::Duration;
 use color_eyre::{eyre::eyre, Result};
 
 use atalanta::configuration::{load_distributor_config, load_settings};
 use atalanta::initialise::startup;
 use atalanta::models::{DistributorConfig, Settings};
-use atalanta::{amqp, formatters::*};
+use atalanta::{amqp, consumers, formatters, senders};
 use tracing::info;
 
 fn main() -> Result<()> {
@@ -19,12 +15,12 @@ fn main() -> Result<()> {
 
     info!(config.provider_slug, "distributing transactions");
 
-    start_distributor(config, settings)?;
+    start_distributor(config, &settings)?;
 
     Ok(())
 }
 
-fn create_consumer<C: Consumer>(
+fn create_consumer<C: consumers::Consumer>(
     config: DistributorConfig,
     channel: amiquip::Channel,
     delay: Option<Duration>,
@@ -36,61 +32,83 @@ fn create_consumer<C: Consumer>(
 }
 
 fn init_and_start_consuming<C, F, S>(
-    settings: Settings,
+    settings: &Settings,
     config: DistributorConfig,
     delay: Option<Duration>,
 ) -> Result<()>
 where
-    C: Consumer,
-    F: Formatter,
-    S: Sender,
+    C: consumers::Consumer,
+    F: formatters::Formatter,
+    S: senders::Sender,
 {
-    let mut connection = amqp::connect(&settings)?;
+    let mut connection = amqp::connect(settings)?;
     let channel = connection.open_channel(None)?;
 
     let consumer = create_consumer::<C>(config.clone(), channel, delay);
     let sender =
         S::try_from(config.sender).map_err(|_| eyre!("failed to create sender from config"))?;
 
-    start_consuming::<C, F, S>(consumer, sender)?;
+    consumers::start_consuming::<C, F, S>(&consumer, &sender)?;
 
     connection.close()?;
 
     Ok(())
 }
 
-fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()> {
+fn start_distributor(config: DistributorConfig, settings: &Settings) -> Result<()> {
     match config.provider_slug.as_str() {
-        "costa" => init_and_start_consuming::<InstantConsumer, CostaFormatter, APISender>(
-            settings, config, None,
-        )?,
-        "stonegate" => init_and_start_consuming::<InstantConsumer, StonegateFormatter, APISender>(
-            settings, config, None,
-        )?,
+        "costa" => init_and_start_consuming::<
+            consumers::instant::Consumer,
+            formatters::costa::Formatter,
+            senders::api::APISender,
+        >(settings, config, None)?,
+        "stonegate" => {
+            init_and_start_consuming::<
+                consumers::instant::Consumer,
+                formatters::stonegate::Formatter,
+                senders::api::APISender,
+            >(settings, config, None)?;
+        }
         "tgi-fridays" => {
-            init_and_start_consuming::<InstantConsumer, TGIFridaysFormatter, BlobSender>(
-                settings, config, None,
-            )?
+            init_and_start_consuming::<
+                consumers::instant::Consumer,
+                formatters::tgi_fridays::Formatter,
+                senders::blob::Sender,
+            >(settings, config, None)?;
         }
-        "wasabi-club" => init_and_start_consuming::<BatchConsumer, WasabiFormatter, SFTPSender>(
-            settings, config, None,
-        )?,
+        "wasabi-club" => {
+            init_and_start_consuming::<
+                consumers::batch::Consumer,
+                formatters::wasabi::Formatter,
+                senders::sftp::Sender,
+            >(settings, config, None)?;
+        }
         "iceland-bonus-card" => {
-            init_and_start_consuming::<BatchConsumer, IcelandFormatter, BlobSender>(
-                settings, config, None,
-            )?
+            init_and_start_consuming::<
+                consumers::batch::Consumer,
+                formatters::iceland::Formatter,
+                senders::blob::Sender,
+            >(settings, config, None)?;
         }
-        "visa-auth" => init_and_start_consuming::<InstantConsumer, VisaAuthFormatter, APISender>(
-            settings, config, None,
-        )?,
+        "visa-auth" => {
+            init_and_start_consuming::<
+                consumers::instant::Consumer,
+                formatters::visa::AuthFormatter,
+                senders::api::APISender,
+            >(settings, config, None)?;
+        }
         "visa-settlement" => init_and_start_consuming::<
-            DelayConsumer,
-            VisaSettlementFormatter,
-            APISender,
+            consumers::delay::Consumer,
+            formatters::visa::SettlementFormatter,
+            senders::api::APISender,
         >(settings, config, Some(Duration::seconds(10)))?,
-        "amex-auth" => init_and_start_consuming::<InstantConsumer, AmexAuthFormatter, AmexSender>(
-            settings, config, None,
-        )?,
+        "amex-auth" => {
+            init_and_start_consuming::<
+                consumers::instant::Consumer,
+                formatters::amex::AuthFormatter,
+                senders::amex::Sender,
+            >(settings, config, None)?;
+        }
         _ => return Err(eyre!("No process available for {}", config.provider_slug)),
     }
 

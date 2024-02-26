@@ -1,19 +1,20 @@
 use amiquip::{Channel, ConsumerMessage::Delivery, ConsumerOptions, QueueDeclareOptions};
 use color_eyre::{eyre::eyre, Result};
+
 use tracing::{debug, info, warn};
 
 use crate::models::{DistributorConfig, Transaction};
 
-use super::{queue_declare, Consumer};
+use super::queue_declare;
 
 /// A consumer that reads all messages off a queue and sends them as a batch.
 /// Useful for file-based providers that run as a scheduled process.
-pub struct BatchConsumer {
+pub struct Consumer {
     pub channel: Channel,
     pub config: DistributorConfig,
 }
 
-impl Consumer for BatchConsumer {
+impl super::Consumer for Consumer {
     fn new(config: DistributorConfig, channel: Channel) -> Self {
         Self { channel, config }
     }
@@ -39,20 +40,7 @@ impl Consumer for BatchConsumer {
             },
         )?;
 
-        // if the queue is empty or we can't determine the message count, quit early.
-        let message_count = check_queue_message_count(&queue)?;
-        if message_count == 0 {
-            warn!("queue {} is empty, not consuming messages.", queue.name());
-            return Ok(());
-        }
-        info!("queue {} has {} messages.", queue.name(), message_count);
-
-        // if the queue already has consumers, quit early.
-        if !no_other_consumers(&queue)? {
-            warn!(
-                "queue {} already has consumers, not consuming messages.",
-                queue.name()
-            );
+        if !queue_is_consumable(&queue)? {
             return Ok(());
         }
 
@@ -65,10 +53,16 @@ impl Consumer for BatchConsumer {
         // the messages will go down faster than expected and this will hang
         // waiting for the last few to land.
         // we check for other consumers above, but that's not a guarantee.
+        let message_count = queue.declared_message_count().ok_or_else(|| {
+            eyre!(
+                "unable to determine message count for queue {}.",
+                queue.name()
+            )
+        })?;
         for messages in consumer
             .receiver()
             .iter()
-            .take(message_count)
+            .take(message_count as usize)
             .filter_map(|message| {
                 if let Delivery(message) = message {
                     Some(message)
@@ -94,24 +88,34 @@ impl Consumer for BatchConsumer {
     }
 }
 
-fn check_queue_message_count(queue: &amiquip::Queue) -> Result<usize> {
-    if let Some(count) = queue.declared_message_count() {
-        Ok(count as usize)
-    } else {
-        Err(eyre!(
+fn queue_is_consumable(queue: &amiquip::Queue) -> Result<bool> {
+    // if the queue is empty or we can't determine the message count, quit early.
+    let message_count = queue.declared_consumer_count().ok_or_else(|| {
+        eyre!(
             "unable to determine message count for queue {}.",
             queue.name()
-        ))
-    }
-}
+        )
+    })?;
 
-fn no_other_consumers(queue: &amiquip::Queue) -> Result<bool> {
-    if let Some(count) = queue.declared_consumer_count() {
-        Ok(count == 0)
-    } else {
-        Err(eyre!(
+    let consumer_count = queue.declared_consumer_count().ok_or_else(|| {
+        eyre!(
             "unable to determine consumer count for queue {}.",
             queue.name()
-        ))
+        )
+    })?;
+
+    if message_count == 0 {
+        warn!("queue {} is empty, not consuming messages.", queue.name());
+        Ok(false)
+    }
+    // if the queue already has consumers, quit early.
+    else if consumer_count > 0 {
+        warn!(
+            "queue {} already has consumers, not consuming messages.",
+            queue.name()
+        );
+        Ok(false)
+    } else {
+        Ok(true)
     }
 }

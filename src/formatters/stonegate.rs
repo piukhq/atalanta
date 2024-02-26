@@ -1,14 +1,10 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-
 use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use serde_json::json;
 
-use super::Formatter;
+pub struct Formatter;
 
-pub struct StonegateFormatter;
-
-impl Formatter for StonegateFormatter {
+impl super::Formatter for Formatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let metadata: serde_json::Value =
             serde_json::from_str(include_str!("stonegate_metadata.json"))?;
@@ -50,6 +46,8 @@ mod tests {
     use chrono::Utc;
     use pretty_assertions::assert_eq;
 
+    use crate::formatters::Formatter as _;
+
     use super::*;
 
     #[test]
@@ -84,7 +82,7 @@ mod tests {
             },
         ];
 
-        let json_result = StonegateFormatter::format(test_transactions);
+        let json_result = Formatter::format(test_transactions);
 
         let metadata: serde_json::Value =
             serde_json::from_str(include_str!("stonegate_metadata.json"))?;

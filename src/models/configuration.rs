@@ -51,7 +51,7 @@ pub struct SFTPSenderConfig {
     pub port: u16,
     pub username: String,
     pub key_file_path: PathBuf,
-    pub upload_path: String,
+    pub upload_path: PathBuf,
 }
 
 #[derive(serde::Deserialize, Clone)]

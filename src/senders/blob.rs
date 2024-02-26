@@ -1,23 +1,23 @@
 use crate::{
     models::SenderConfig,
-    services::blob::{send_to_blob_storage, BlobCredentials},
+    services::blob::{send_to_blob_storage, Credentials},
 };
 
-use super::Sender;
 use color_eyre::{eyre::eyre, Result};
+use pollster::FutureExt;
 
 /// A struct that can send messages to a blob storage.
-pub struct BlobSender {
-    pub blob_credentials: BlobCredentials,
+pub struct Sender {
+    pub blob_credentials: Credentials,
 }
 
-impl TryFrom<SenderConfig> for BlobSender {
+impl TryFrom<SenderConfig> for Sender {
     type Error = color_eyre::Report;
 
     fn try_from(config: SenderConfig) -> Result<Self> {
         match config {
-            SenderConfig::Blob(config) => Ok(BlobSender {
-                blob_credentials: BlobCredentials::new(
+            SenderConfig::Blob(config) => Ok(Self {
+                blob_credentials: Credentials::new(
                     config.account,
                     config.access_key,
                     config.container,
@@ -28,9 +28,9 @@ impl TryFrom<SenderConfig> for BlobSender {
     }
 }
 
-impl Sender for BlobSender {
+impl super::Sender for Sender {
     fn send(&self, transactions: String) -> Result<()> {
-        send_to_blob_storage(transactions, &self.blob_credentials)?;
+        send_to_blob_storage(transactions, &self.blob_credentials).block_on()?;
         Ok(())
     }
 }

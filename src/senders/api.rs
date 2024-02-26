@@ -18,8 +18,8 @@ enum APISenderHeaderValue {
 impl APISenderHeaderValue {
     fn resolve(&self) -> Result<String> {
         match self {
-            APISenderHeaderValue::Literal(v) => Ok(v.clone()),
-            APISenderHeaderValue::Secret(path) => fs::read_to_string(path)
+            Self::Literal(v) => Ok(v.clone()),
+            Self::Secret(path) => fs::read_to_string(path)
                 .map(|s| s.trim().to_owned())
                 .map_err(|e| {
                     eyre!(
@@ -64,7 +64,7 @@ impl TryFrom<models::SenderConfig> for APISender {
 
     fn try_from(config: models::SenderConfig) -> Result<Self> {
         match config {
-            models::SenderConfig::API(config) => Ok(APISender {
+            models::SenderConfig::API(config) => Ok(Self {
                 url: config.url,
                 headers: config
                     .headers
@@ -81,8 +81,6 @@ impl Sender for APISender {
     #[tracing::instrument(skip_all, name = "APISender::send")]
     fn send(&self, transactions: String) -> Result<()> {
         let client = Client::new();
-        println!("{:?}", transactions);
-
         let mut headers = HeaderMap::new();
         for header in &self.headers {
             let value = header.value.resolve()?;

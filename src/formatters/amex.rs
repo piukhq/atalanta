@@ -1,5 +1,3 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-
 use crate::{formatters::to_pounds, models::Transaction};
 use chrono::FixedOffset;
 use color_eyre::{eyre::eyre, Result};
@@ -7,9 +5,9 @@ use serde_json::json;
 
 use super::Formatter;
 
-pub struct AmexAuthFormatter;
+pub struct AuthFormatter;
 
-impl Formatter for AmexAuthFormatter {
+impl Formatter for AuthFormatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let transaction = transactions
             .into_iter()
@@ -92,7 +90,7 @@ mod tests {
             last_four: "7890".to_owned(),
         };
 
-        let json_result = AmexAuthFormatter::format(vec![test_transaction]);
+        let json_result = AuthFormatter::format(vec![test_transaction]);
         let mst_timezone = FixedOffset::west_opt(7 * 60 * 60)
             .ok_or_else(|| eyre!("failed to create MST timezone"))?;
         let auth_tx_json = json!({

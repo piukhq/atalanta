@@ -1,11 +1,8 @@
-mod delay;
-pub use delay::DelayConsumer;
+pub mod batch;
+pub mod delay;
+pub mod instant;
 
-mod instant;
-pub use instant::InstantConsumer;
-
-mod batch;
-pub use batch::BatchConsumer;
+use std::collections::BTreeMap;
 
 use amiquip::{Channel, ExchangeDeclareOptions, ExchangeType, Queue, QueueDeclareOptions};
 use color_eyre::Result;
@@ -21,13 +18,22 @@ pub trait Consumer {
     fn new_with_delay(config: DistributorConfig, channel: Channel, delay: chrono::Duration)
         -> Self;
 
+    /// Consumes messages from a queue and invokes the given function with the transactions.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if messages cannot be consumed and parsed.
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>;
 }
 
 /// A generic function that can start any consumer with a given transaction formatter & sender.
-pub fn start_consuming<C, F, S>(consumer: C, sender: S) -> Result<()>
+///
+/// # Errors
+///
+/// Returns an error if the consumer cannot consume messages or the sender cannot send them.
+pub fn start_consuming<C, F, S>(consumer: &C, sender: &S) -> Result<()>
 where
     C: Consumer,
     F: Formatter,
@@ -57,7 +63,7 @@ fn queue_declare<'a>(
         queue.name(),
         exchange.name(),
         &config.routing_key,
-        Default::default(),
+        BTreeMap::default(),
     )?;
 
     Ok(queue)

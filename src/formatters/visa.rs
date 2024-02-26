@@ -1,5 +1,3 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-
 use crate::{formatters::to_pounds, models::Transaction};
 use chrono::Utc;
 use color_eyre::{eyre::eyre, Result};
@@ -7,9 +5,9 @@ use serde_json::json;
 
 use super::Formatter;
 
-pub struct VisaAuthFormatter;
+pub struct AuthFormatter;
 
-impl Formatter for VisaAuthFormatter {
+impl Formatter for AuthFormatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let transaction = transactions
             .into_iter()
@@ -58,9 +56,9 @@ impl Formatter for VisaAuthFormatter {
     }
 }
 
-pub struct VisaSettlementFormatter;
+pub struct SettlementFormatter;
 
-impl Formatter for VisaSettlementFormatter {
+impl Formatter for SettlementFormatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let transaction = transactions
             .into_iter()
@@ -113,21 +111,21 @@ impl Formatter for VisaSettlementFormatter {
 
 fn primary_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
-        "PRIMARY" => transaction.identifier.to_owned(),
+        "PRIMARY" => transaction.identifier.clone(),
         _ => "PRIM11111".to_owned(),
     }
 }
 
 fn secondary_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
-        "SECONDARY" => transaction.identifier.to_owned(),
+        "SECONDARY" => transaction.identifier.clone(),
         _ => "SEC222222".to_owned(),
     }
 }
 
 fn psimi_identifier(transaction: &Transaction) -> String {
     match transaction.identifier_type.as_str() {
-        "PSIMI" => transaction.identifier.to_owned(),
+        "PSIMI" => transaction.identifier.clone(),
         _ => "PSIMI3333".to_owned(),
     }
 }
@@ -161,7 +159,7 @@ mod tests {
             last_four: "7890".to_owned(),
         };
 
-        let json_result = VisaAuthFormatter::format(vec![test_transaction]);
+        let json_result = AuthFormatter::format(vec![test_transaction]);
         assert_eq!(
             serde_json::from_str::<serde_json::Value>(&json_result?)?,
             json!({

@@ -1,8 +1,8 @@
-mod config;
+mod configuration;
 mod payment;
 mod settings;
 
-pub use config::{
+pub use configuration::{
     APISenderConfig, APISenderHeader, APISenderHeaderValue, BlobSenderConfig, DistributorConfig,
     SFTPSenderConfig, SenderConfig, TransactorConfig,
 };

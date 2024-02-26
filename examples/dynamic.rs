@@ -77,7 +77,7 @@ impl Consumer for SleepyConsumer {
 }
 
 /// A generic function that can send messages via any Sender.
-fn send_message<C: Consumer, S: Sender>(consumer: C, sender: S) {
+fn send_message<C: Consumer, S: Sender>(consumer: &C, sender: &S) {
     consumer.consume(|msg| sender.send(msg));
 }
 
@@ -102,7 +102,7 @@ fn main() -> Result<()> {
                 port: 22,
             };
 
-            send_message(consumer, sender);
+            send_message(&consumer, &sender);
         }
         "mastercard" => {
             let consumer = SleepyConsumer {
@@ -112,7 +112,7 @@ fn main() -> Result<()> {
                 container: "harmonia-transactions".to_owned(),
             };
 
-            send_message(consumer, sender);
+            send_message(&consumer, &sender);
         }
         "visa" => {
             let consumer = InstantConsumer;
@@ -120,7 +120,7 @@ fn main() -> Result<()> {
                 url: "http://zephyrus.local/api".to_owned(),
             };
 
-            send_message(consumer, sender);
+            send_message(&consumer, &sender);
         }
         _ => panic!("Unknown provider"),
     }
