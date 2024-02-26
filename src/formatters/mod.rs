@@ -14,6 +14,8 @@ mod costa;
 pub use costa::CostaFormatter;
 mod stonegate;
 pub use stonegate::StonegateFormatter;
+mod tgi_fridays;
+pub use tgi_fridays::TGIFridaysFormatter;
 
 pub fn to_pounds(amount: i64) -> String {
     Decimal::new(amount, 2).to_string()

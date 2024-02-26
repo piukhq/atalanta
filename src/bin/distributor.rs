@@ -47,6 +47,14 @@ fn start_distributor(config: DistributorConfig, settings: Settings) -> Result<()
             let sender = APISender::try_from(config.sender)?;
             start_consuming::<_, StonegateFormatter, _>(consumer, sender)?;
         }
+        "tgi-fridays" => {
+            let consumer = InstantConsumer {
+                config: config.clone(),
+                channel,
+            };
+            let sender = BlobSender::try_from(config.sender)?;
+            start_consuming::<_, TGIFridaysFormatter, _>(consumer, sender)?;
+        }
         "wasabi-club" => {
             let consumer = BatchConsumer {
                 config: config.clone(),

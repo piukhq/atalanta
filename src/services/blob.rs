@@ -22,7 +22,7 @@ impl BlobCredentials {
 
 #[tokio::main]
 pub async fn send_to_blob_storage(content: String, credentials: &BlobCredentials) -> Result<()> {
-    let storage_credentials = StorageCredentials::Key(
+    let storage_credentials = StorageCredentials::access_key(
         credentials.account.to_owned(),
         credentials.access_key.to_owned(),
     );
@@ -43,7 +43,7 @@ pub async fn file_from_blob_storage(
     credentials: &BlobCredentials,
 ) -> Result<()> {
     println!("TODO, get files from blob storage: {}", container);
-    let storage_credentials = StorageCredentials::Key(
+    let storage_credentials = StorageCredentials::access_key(
         credentials.account.to_owned(),
         credentials.access_key.to_owned(),
     );
