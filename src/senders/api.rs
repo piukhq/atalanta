@@ -2,7 +2,6 @@ use std::{fs, path::PathBuf};
 
 use crate::models;
 
-use super::Sender;
 use color_eyre::{eyre::eyre, Result};
 use reqwest::{
     blocking::Client,
@@ -54,12 +53,12 @@ impl From<models::APISenderHeader> for APISenderHeader {
     }
 }
 
-pub struct APISender {
+pub struct Sender {
     pub url: String,
     headers: Vec<APISenderHeader>,
 }
 
-impl TryFrom<models::SenderConfig> for APISender {
+impl TryFrom<models::SenderConfig> for Sender {
     type Error = color_eyre::Report;
 
     fn try_from(config: models::SenderConfig) -> Result<Self> {
@@ -77,7 +76,7 @@ impl TryFrom<models::SenderConfig> for APISender {
     }
 }
 
-impl Sender for APISender {
+impl super::Sender for Sender {
     #[tracing::instrument(skip_all, name = "APISender::send")]
     fn send(&self, transactions: String) -> Result<()> {
         let client = Client::new();

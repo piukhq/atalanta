@@ -56,59 +56,33 @@ where
 }
 
 fn start_distributor(config: DistributorConfig, settings: &Settings) -> Result<()> {
+    macro_rules! init_and_start_consuming {
+        ($consumer:ident, $formatter:ident, $sender:ident) => {
+            init_and_start_consuming::<
+                consumers::$consumer::Consumer,
+                formatters::$formatter::Formatter,
+                senders::$sender::Sender,
+            >(settings, config, None)?
+        };
+
+        ($consumer:ident, $formatter:ident, $sender:ident, $delay_seconds:expr) => {
+            init_and_start_consuming::<
+                consumers::$consumer::Consumer,
+                formatters::$formatter::Formatter,
+                senders::$sender::Sender,
+            >(settings, config, Some(Duration::seconds($delay_seconds)))?
+        };
+    }
+
     match config.provider_slug.as_str() {
-        "costa" => init_and_start_consuming::<
-            consumers::instant::Consumer,
-            formatters::costa::Formatter,
-            senders::api::APISender,
-        >(settings, config, None)?,
-        "stonegate" => {
-            init_and_start_consuming::<
-                consumers::instant::Consumer,
-                formatters::stonegate::Formatter,
-                senders::api::APISender,
-            >(settings, config, None)?;
-        }
-        "tgi-fridays" => {
-            init_and_start_consuming::<
-                consumers::instant::Consumer,
-                formatters::tgi_fridays::Formatter,
-                senders::blob::Sender,
-            >(settings, config, None)?;
-        }
-        "wasabi-club" => {
-            init_and_start_consuming::<
-                consumers::batch::Consumer,
-                formatters::wasabi::Formatter,
-                senders::sftp::Sender,
-            >(settings, config, None)?;
-        }
-        "iceland-bonus-card" => {
-            init_and_start_consuming::<
-                consumers::batch::Consumer,
-                formatters::iceland::Formatter,
-                senders::blob::Sender,
-            >(settings, config, None)?;
-        }
-        "visa-auth" => {
-            init_and_start_consuming::<
-                consumers::instant::Consumer,
-                formatters::visa::AuthFormatter,
-                senders::api::APISender,
-            >(settings, config, None)?;
-        }
-        "visa-settlement" => init_and_start_consuming::<
-            consumers::delay::Consumer,
-            formatters::visa::SettlementFormatter,
-            senders::api::APISender,
-        >(settings, config, Some(Duration::seconds(10)))?,
-        "amex-auth" => {
-            init_and_start_consuming::<
-                consumers::instant::Consumer,
-                formatters::amex::AuthFormatter,
-                senders::amex::Sender,
-            >(settings, config, None)?;
-        }
+        "costa" => init_and_start_consuming!(instant, costa, api),
+        "stonegate" => init_and_start_consuming!(instant, stonegate, api),
+        "tgi-fridays" => init_and_start_consuming!(instant, tgi_fridays, blob),
+        "wasabi-club" => init_and_start_consuming!(batch, wasabi, sftp),
+        "iceland-bonus-card" => init_and_start_consuming!(batch, iceland, blob),
+        "visa-auth" => init_and_start_consuming!(instant, visa_auth, api),
+        "visa-settlement" => init_and_start_consuming!(delay, visa_settlement, api, 10),
+        "amex-auth" => init_and_start_consuming!(instant, amex_auth, amex),
         _ => return Err(eyre!("No process available for {}", config.provider_slug)),
     }
 

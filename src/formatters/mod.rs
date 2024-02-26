@@ -2,12 +2,14 @@ use crate::models::Transaction;
 use color_eyre::Result;
 use rust_decimal::prelude::*;
 
-pub mod amex;
+pub mod amex_auth;
+pub mod amex_settlement;
 pub mod costa;
 pub mod iceland;
 pub mod stonegate;
 pub mod tgi_fridays;
-pub mod visa;
+pub mod visa_auth;
+pub mod visa_settlement;
 pub mod wasabi;
 
 #[must_use]
