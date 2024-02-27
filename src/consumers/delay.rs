@@ -10,18 +10,32 @@ use crate::{
     models::{DistributorConfig, Transaction},
 };
 
-use super::Consumer;
-
 /// A consumer that reads messages off a queue and sends them after a delay.
 /// Useful for settlement providers that send transactions one at a time, usually some time after
 /// the corresponding auth transaction was sent.
-pub struct DelayConsumer {
+pub struct Consumer {
     pub config: DistributorConfig,
     pub channel: Channel,
     pub delay: Duration,
 }
 
-impl Consumer for DelayConsumer {
+impl super::Consumer for Consumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self {
+        Self {
+            config,
+            channel,
+            delay: Duration::seconds(0),
+        }
+    }
+
+    fn new_with_delay(config: DistributorConfig, channel: Channel, delay: Duration) -> Self {
+        Self {
+            config,
+            channel,
+            delay,
+        }
+    }
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
@@ -31,27 +45,11 @@ impl Consumer for DelayConsumer {
         let consumer = queue.consume(ConsumerOptions::default())?;
 
         info!(self.config.routing_key, "waiting for messages");
-        for message in consumer.receiver().iter() {
+        for message in consumer.receiver() {
             trace!("message received");
             match message {
                 ConsumerMessage::Delivery(delivery) => {
-                    let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
-
-                    let now = Utc::now();
-                    let send_at = tx.transaction_date + self.delay;
-                    let delay = send_at - now;
-                    match delay.to_std() {
-                        Ok(delay) => {
-                            info!(?send_at, ?delay, "waiting");
-                            sleep(delay);
-                        }
-                        Err(_) => {
-                            info!("delay < 0; transaction must be sent immediately");
-                        }
-                    }
-
-                    consumer.ack(delivery)?;
-                    f(vec![tx])?;
+                    self.handle_message(delivery, &consumer, &f)?;
                 }
                 other => {
                     info!(message = ?other, "consumer ended");
@@ -60,6 +58,35 @@ impl Consumer for DelayConsumer {
             }
         }
 
+        Ok(())
+    }
+}
+
+impl Consumer {
+    fn handle_message<F>(
+        &self,
+        delivery: amiquip::Delivery,
+        consumer: &amiquip::Consumer<'_>,
+        callback: &F,
+    ) -> Result<(), eyre::Error>
+    where
+        F: Fn(Vec<Transaction>) -> Result<()>,
+    {
+        let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
+        let now = Utc::now();
+        let send_at = tx.transaction_date + self.delay;
+        let delay = send_at - now;
+        match delay.to_std() {
+            Ok(delay) => {
+                info!(?send_at, ?delay, "waiting");
+                sleep(delay);
+            }
+            Err(_) => {
+                info!("delay < 0; transaction must be sent immediately");
+            }
+        }
+        consumer.ack(delivery)?;
+        callback(vec![tx])?;
         Ok(())
     }
 }

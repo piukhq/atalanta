@@ -1,5 +1,3 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
-
 use amiquip::{Exchange, ExchangeDeclareOptions, ExchangeType, Publish};
 use atalanta::amqp;
 use chrono::Utc;
@@ -29,7 +27,7 @@ fn main() -> Result<()> {
         load_payment_card_tokens(&config.provider_slug, &settings.tokens_file_path)?;
     let identifiers = load_retailer_identifiers(&config.provider_slug, &settings.mids_file_path)?;
 
-    transaction_producer(config, settings, &payment_card_tokens, &identifiers)
+    transaction_producer(&config, &settings, &payment_card_tokens, &identifiers)
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,9 +81,9 @@ enum IdentifierType {
 impl ToString for IdentifierType {
     fn to_string(&self) -> String {
         match self {
-            IdentifierType::PrimaryMID => "PRIMARY".to_owned(),
-            IdentifierType::SecondaryMID => "SECONDARY".to_owned(),
-            IdentifierType::Psimi => "PSIMI".to_owned(),
+            Self::PrimaryMID => "PRIMARY".to_owned(),
+            Self::SecondaryMID => "SECONDARY".to_owned(),
+            Self::Psimi => "PSIMI".to_owned(),
         }
     }
 }
@@ -129,8 +127,8 @@ fn load_retailer_identifiers(
 }
 
 fn transaction_producer(
-    config_data: TransactorConfig,
-    settings: Settings,
+    config_data: &TransactorConfig,
+    settings: &Settings,
     payment_card_tokens: &[TokenRecord],
     identifiers: &[IdentifierRecord],
 ) -> Result<()> {
@@ -168,13 +166,13 @@ fn transaction_producer(
         let identifier_details =
             select_identifiers_per_payment_provider(identifiers, &payment_provider);
         tx = create_transaction(
-            &config_data,
+            config_data,
             &payment_provider,
             &payment_details,
             &identifier_details,
         )?;
 
-        queue_transaction(&exchange, tx, &routing_key)?;
+        queue_transaction(&exchange, &tx, &routing_key)?;
 
         std::thread::sleep(delay);
     }
@@ -222,7 +220,7 @@ fn create_transaction(
         payment_provider: payment_provider.to_string(),
         merchant_name: config.provider_slug.clone(),
         transaction_id: Uuid::new_v4().to_string(),
-        auth_code: create_auth_code()?,
+        auth_code: create_auth_code(),
         identifier: identifier.identifier.clone(),
         identifier_type: identifier.identifier_type.to_string(),
         token: token.token.clone(),
@@ -238,14 +236,14 @@ fn select_payment_provider(percentages: &[(String, i32); 3]) -> Result<String> {
     Ok(provider)
 }
 
-fn create_auth_code() -> Result<String> {
-    let number = rand::thread_rng().gen_range(9..1000000);
-    Ok(format!("{:0>6}", number))
+fn create_auth_code() -> String {
+    let number = rand::thread_rng().gen_range(9..1_000_000);
+    format!("{number:0>6}")
 }
 
 fn queue_transaction(
     exchange: &Exchange,
-    transaction: Transaction,
+    transaction: &Transaction,
     routing_key: &String,
 ) -> Result<()> {
     // Publish a message to the "new_transaction" queue.
@@ -260,10 +258,9 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn create_auth_code_success() -> Result<()> {
-        let auth_code = create_auth_code()?;
+    fn create_auth_code_success() {
+        let auth_code = create_auth_code();
         assert_eq!(auth_code.len(), 6);
-        Ok(())
     }
 
     #[test]

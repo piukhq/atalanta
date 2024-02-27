@@ -1,14 +1,11 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::{formatters::to_pounds, models::Transaction};
 use color_eyre::Result;
 use csv::Writer;
 use rand::Rng;
 use serde::Serialize;
 
-use super::Formatter;
-
 #[derive(Serialize)]
-pub struct WasabiTransaction {
+pub struct TransactionRecord {
     #[serde(rename = "Store No_")]
     pub store_no: String,
     #[serde(rename = "Entry No_")]
@@ -37,14 +34,14 @@ pub struct WasabiTransaction {
     pub receipt_no: String,
 }
 
-pub struct WasabiFormatter;
+pub struct Formatter;
 
-impl Formatter for WasabiFormatter {
+impl super::Formatter for Formatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let mut wtr = Writer::from_writer(vec![]);
 
         for transaction in transactions {
-            let wasabi_tx = WasabiTransaction {
+            let wasabi_tx = TransactionRecord {
                 store_no: "A076".to_owned(),
                 entry_no: "16277".to_owned(),
                 transaction_no: transaction.transaction_id,
@@ -84,6 +81,8 @@ fn card_type_name(payment_provider: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::formatters::Formatter as _;
+
     use super::*;
     use chrono::Utc;
     use pretty_assertions::assert_eq;
@@ -127,7 +126,7 @@ mod tests {
             },
         ];
 
-        let wasabi_tx = WasabiFormatter::format(test_transactions)?;
+        let wasabi_tx = Formatter::format(test_transactions)?;
 
         // 1 header, 2 transactions, 1 newline
         assert_eq!(wasabi_tx.split('\n').count(), 4);

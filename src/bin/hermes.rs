@@ -84,11 +84,11 @@ fn make_payment_card_user_info_response(
     id: usize,
 ) -> PaymentCardUserInfoResponse {
     PaymentCardUserInfoResponse {
-        loyalty_id: String::from(""),
+        loyalty_id: String::new(),
         scheme_account_id: id,
         payment_card_account_id: id,
         user_id: id,
-        credentials: String::from(""),
+        credentials: String::new(),
         card_information: CardInformation {
             first_six: card_info.first_six.clone(),
             last_four: card_info.last_four.clone(),
@@ -110,7 +110,7 @@ async fn payment_card_user_info(
         .payment_cards
         .iter()
         .enumerate()
-        .flat_map(|(idx, token)| {
+        .filter_map(|(idx, token)| {
             find_card_info(&state.user_info, token).map(|card_info| {
                 (
                     token.clone(),
@@ -133,13 +133,6 @@ fn load_payment_card_user_info<P>(path: P) -> Result<HashMap<Token, CardInfo>>
 where
     P: AsRef<Path>,
 {
-    // Load token and slugs derived from the Hermes database
-    let file = File::open(&path)
-        .wrap_err_with(|| format!("Failed to open {}", path.as_ref().display()))?;
-    let mut rdr = csv::ReaderBuilder::new()
-        .has_headers(false)
-        .from_reader(file);
-
     #[derive(Deserialize)]
     struct Record {
         token: String,
@@ -148,6 +141,13 @@ where
         last_four: String,
         _payment_slug: String,
     }
+
+    // Load token and slugs derived from the Hermes database
+    let file = File::open(&path)
+        .wrap_err_with(|| format!("Failed to open {}", path.as_ref().display()))?;
+    let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_reader(file);
 
     let records = rdr
         .deserialize()

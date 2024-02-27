@@ -1,4 +1,3 @@
-#![warn(clippy::unwrap_used, clippy::expect_used)]
 use crate::{formatters::to_pounds, models::Transaction};
 use chrono::prelude::*;
 use chrono_tz::Europe::London;
@@ -6,10 +5,8 @@ use color_eyre::Result;
 use csv::WriterBuilder;
 use serde::Serialize;
 
-use super::Formatter;
-
 #[derive(Serialize)]
-pub struct IcelandTransaction {
+pub struct TransactionRecord {
     #[serde(rename = "TransactionCardFirst6")]
     pub first_six: String,
     #[serde(rename = "TransactionCardLast4")]
@@ -38,15 +35,14 @@ pub struct IcelandTransaction {
     pub auth_code: String,
 }
 
-pub struct IcelandFormatter;
+pub struct Formatter;
 
-impl Formatter for IcelandFormatter {
+impl super::Formatter for Formatter {
     fn format(transactions: Vec<Transaction>) -> Result<String> {
         let mut wtr = WriterBuilder::new().from_writer(vec![]);
 
-        // TODO: card_scheme name and number, first six and last four.
         for transaction in transactions {
-            let iceland_tx = IcelandTransaction {
+            let iceland_tx = TransactionRecord {
                 first_six: transaction.first_six,
                 last_four: transaction.last_four,
                 expiry: "01/80".to_owned(),
@@ -86,6 +82,8 @@ fn date_to_timezone(date: &DateTime<Utc>) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::formatters::Formatter as _;
+
     use super::*;
     use chrono::{Duration, Utc};
     use pretty_assertions::assert_eq;
@@ -123,7 +121,7 @@ mod tests {
             },
         ];
 
-        let iceland_tx = IcelandFormatter::format(test_transactions)?;
+        let iceland_tx = Formatter::format(test_transactions)?;
 
         assert_eq!(iceland_tx.len(), 485);
 
@@ -131,20 +129,19 @@ mod tests {
     }
 
     #[test]
-    fn convert_to_timezone_datetime() -> Result<()> {
+    fn convert_to_timezone_datetime() {
         // All transaction dates and times are generated as UTC. Therefore we
         // need to make datetimes created during summer months for Iceland to be aware of daylight savings.
         // Check the time changes across a daylight savings change
         let naivedatetime_utc = NaiveDate::from_ymd_opt(2016, 10, 29)
-            .unwrap()
+            .expect("Invalid date")
             .and_hms_opt(12, 0, 0)
-            .unwrap();
-        let datetime_utc = DateTime::<Utc>::from_utc(naivedatetime_utc, Utc);
+            .expect("Invalid time");
+        let datetime_utc = Utc.from_utc_datetime(&naivedatetime_utc);
 
         let day_later = datetime_utc + Duration::hours(24); // same datetime 24 hours later in GMT/UTC
 
         assert_eq!("2016-10-29 13:00:00", date_to_timezone(&datetime_utc));
         assert_eq!("2016-10-30 12:00:00", date_to_timezone(&day_later));
-        Ok(())
     }
 }

@@ -1,29 +1,27 @@
 use crate::models::SenderConfig;
 
-use super::Sender;
 use color_eyre::{eyre::eyre, Result};
 use serde_json::json;
 
-pub struct AmexSender {
+pub struct Sender {
     pub url: String,
 }
 
-impl TryFrom<SenderConfig> for AmexSender {
+impl TryFrom<SenderConfig> for Sender {
     type Error = color_eyre::Report;
 
     fn try_from(value: SenderConfig) -> Result<Self> {
         if let SenderConfig::Amex(config) = value {
-            Ok(AmexSender { url: config.url })
+            Ok(Self { url: config.url })
         } else {
             Err(eyre!("Invalid sender config type, expected Amex"))
         }
     }
 }
 
-impl Sender for AmexSender {
+impl super::Sender for Sender {
     fn send(&self, transactions: String) -> Result<()> {
         let client = reqwest::blocking::Client::new();
-        println!("{:?}", transactions);
         let authorize_url = format!("{}/{}", &self.url, "authorize");
         let client_id = std::env::var("AMEX_CLIENT_ID")?;
         let client_secret = std::env::var("AMEX_CLIENT_SECRET")?;

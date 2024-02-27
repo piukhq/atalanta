@@ -2,7 +2,6 @@ use std::{fs, path::PathBuf};
 
 use crate::models;
 
-use super::Sender;
 use color_eyre::{eyre::eyre, Result};
 use reqwest::{
     blocking::Client,
@@ -18,8 +17,8 @@ enum APISenderHeaderValue {
 impl APISenderHeaderValue {
     fn resolve(&self) -> Result<String> {
         match self {
-            APISenderHeaderValue::Literal(v) => Ok(v.clone()),
-            APISenderHeaderValue::Secret(path) => fs::read_to_string(path)
+            Self::Literal(v) => Ok(v.clone()),
+            Self::Secret(path) => fs::read_to_string(path)
                 .map(|s| s.trim().to_owned())
                 .map_err(|e| {
                     eyre!(
@@ -54,17 +53,17 @@ impl From<models::APISenderHeader> for APISenderHeader {
     }
 }
 
-pub struct APISender {
+pub struct Sender {
     pub url: String,
     headers: Vec<APISenderHeader>,
 }
 
-impl TryFrom<models::SenderConfig> for APISender {
+impl TryFrom<models::SenderConfig> for Sender {
     type Error = color_eyre::Report;
 
     fn try_from(config: models::SenderConfig) -> Result<Self> {
         match config {
-            models::SenderConfig::API(config) => Ok(APISender {
+            models::SenderConfig::API(config) => Ok(Self {
                 url: config.url,
                 headers: config
                     .headers
@@ -77,12 +76,10 @@ impl TryFrom<models::SenderConfig> for APISender {
     }
 }
 
-impl Sender for APISender {
+impl super::Sender for Sender {
     #[tracing::instrument(skip_all, name = "APISender::send")]
     fn send(&self, transactions: String) -> Result<()> {
         let client = Client::new();
-        println!("{:?}", transactions);
-
         let mut headers = HeaderMap::new();
         for header in &self.headers {
             let value = header.value.resolve()?;

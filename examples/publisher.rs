@@ -23,7 +23,7 @@ fn main() -> Result<()> {
     let exchange = Exchange::direct(&channel);
     info!("Publish a message");
     // Publish a message to the "hello" queue.
-    exchange.publish(Publish::new("hello there".as_bytes(), "hello"))?;
+    exchange.publish(Publish::new(b"hello there", "hello"))?;
     info!("Message published");
     connection.close()?;
 

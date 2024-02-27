@@ -7,16 +7,26 @@ use crate::{
     models::{DistributorConfig, Transaction},
 };
 
-use super::Consumer;
-
 /// A consumer that reads messages off a queue and sends them immediately.
 /// Useful for auth providers that generally run in realtime.
-pub struct InstantConsumer {
+pub struct Consumer {
     pub config: DistributorConfig,
     pub channel: Channel,
 }
 
-impl Consumer for InstantConsumer {
+impl super::Consumer for Consumer {
+    fn new(config: DistributorConfig, channel: Channel) -> Self {
+        Self { config, channel }
+    }
+
+    fn new_with_delay(
+        config: DistributorConfig,
+        channel: Channel,
+        _delay: chrono::Duration,
+    ) -> Self {
+        Self { config, channel }
+    }
+
     fn consume<F>(&self, f: F) -> Result<()>
     where
         F: Fn(Vec<Transaction>) -> Result<()>,
@@ -26,7 +36,7 @@ impl Consumer for InstantConsumer {
         info!(self.config.routing_key, "waiting for messages");
 
         let consumer = queue.consume(ConsumerOptions::default())?;
-        for message in consumer.receiver().into_iter() {
+        for message in consumer.receiver() {
             match message {
                 ConsumerMessage::Delivery(delivery) => {
                     let tx: Transaction = rmp_serde::from_slice(&delivery.body)?;
