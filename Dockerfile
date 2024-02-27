@@ -8,11 +8,7 @@ COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
 # build/install dependencies
-FROM chef AS builder 
-ARG LINKERD_AWAIT_VERSION=0.2.7
-
-RUN wget -O linkerd-await https://github.com/linkerd/linkerd-await/releases/download/release/v${LINKERD_AWAIT_VERSION}/linkerd-await-v${LINKERD_AWAIT_VERSION}-amd64
-RUN chmod +x linkerd-await
+FROM chef AS builder
 
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -26,12 +22,9 @@ FROM ubuntu:22.04 AS runtime
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+  rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder \
   /app/target/release/transactor \
   /app/target/release/distributor \
-  /app/linkerd-await \
   /usr/local/bin/
-
-ENTRYPOINT [ "linkerd-await", "--" ]
