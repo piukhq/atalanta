@@ -18,7 +18,7 @@ fn write_to_file(path: &str) -> Result<()> {
     let payment_slugs = ["visa", "amex", "mastercard"];
 
     // We don't explicitly write the header record
-    for n in 1..1_000_000 {
+    for n in 1..=1_000_000 {
         let merch_range = rand::thread_rng().gen_range(0..4);
         let merchant_slug: String = merchant_slugs[merch_range].to_owned();
         let pay_range = rand::thread_rng().gen_range(0..3);

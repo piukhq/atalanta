@@ -61,3 +61,41 @@ Check added keys with `ssh-add -l`
 $ ssh-add -l
 4096 SHA256:6atU6QqYFo/yM3z7fdALL2tVzMePJ/3bNhNEx9vw94g user@example (RSA)
 ```
+
+## Hermes Database Generation
+
+> [!IMPORTANT]
+> This feature is a work-in-progress.
+> It currently populates the following tables:
+> - `public.user`
+
+Atalanta includes tools to help with creating a valid Hermes database to test against.
+
+To get started, prepare a database to populate. Remember to change the environment variable(s) to match your local setup:
+
+```console
+$ export HERMES_DATABASE_NAME=hermes_perf
+$ export HERMES_DATABASE_URL=postgres://postgres@localhost/$HERMES_DATABASE_NAME
+$ psql postgres://postgres@localhost -c "CREATE DATABASE $HERMES_DATABASE_NAME"
+```
+
+Next, use Hermes to set up the database schema:
+
+```console
+$ git clone git@github.com:binkhq/hermes.git
+$ cd hermes
+$ poetry install
+$ VAULT_URL="" poetry run python manage.py migrate
+```
+
+Now use Atalanta to populate the database:
+
+```console
+$ cargo run --bin datapop | psql $HERMES_DATABASE_URL
+```
+
+At this stage the database is ready to use. If you wish to create a compressed dump for use in CI, you can do so with `pg_dump` and `gzip`:
+
+```console
+$ pg_dump $HERMES_DATABASE_URL | gzip > hermes_perf.sql.gz
+```
