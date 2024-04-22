@@ -22,14 +22,15 @@ struct User {
 }
 
 fn main() -> color_eyre::Result<()> {
+    eprintln!("loading payment card user info...");
     let records = load_payment_card_user_info("files/hermes_tokens.csv")?;
-
     let users = records.iter().enumerate().map(|(i, _record)| User {
         id: i,
         email: format!("user{i}@testbink.com"),
         uid: format!("uid{i}"),
     });
 
+    eprintln!("populating user data...");
     println!("COPY public.user (id, password, is_superuser, email, is_active, date_joined, is_staff, uid, client_id, salt, external_id, is_tester, delete_token, bundle_id) FROM stdin;");
     for user in users {
         let fields = [
@@ -52,6 +53,8 @@ fn main() -> color_eyre::Result<()> {
         println!("{}", fields.join("\t"));
     }
     println!(r"\.");
+
+    eprintln!("done!");
 
     Ok(())
 }
